@@ -8,7 +8,7 @@
 
 ## What the new signature does
 - No icon images. Small blue letters (M, E, W, A) label each line, so nothing can vanish.
-- No hard-coded black text. Your name and details inherit the reader's text colour, so they flip to white in dark mode on their own.
+- Text uses a soft near-black, never pure black. Dark-mode apps, including the Gmail app, flip it to white automatically.
 - Accent colour is a mid-blue that reads on both white and black backgrounds.
 - Arial throughout, no underlines, phone written in a readable format.
 
