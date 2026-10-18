@@ -47,6 +47,7 @@ SIG = f'''<table cellpadding="0" cellspacing="0" border="0" role="presentation" 
 <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr>
 <td width="40" height="3" style="width:40px;height:3px;background-color:{CYAN};font-size:0;line-height:0;">&nbsp;</td>
 <td width="40" height="3" style="width:40px;height:3px;background-color:{LIME};font-size:0;line-height:0;">&nbsp;</td>
+<td width="40" height="3" style="width:40px;height:3px;background-color:{CORAL};font-size:0;line-height:0;">&nbsp;</td>
 </tr></table>
 <div style="padding-top:6px;font-size:11px;line-height:16px;letter-spacing:1px;font-weight:bold;color:{GRAPHITE};">DESIGNED TO FLOW. BUILT TO PROFIT.</div>
 </td></tr>

@@ -8,7 +8,7 @@
 
 ## What the new signature does
 Built from the Flowline Operations Brand Book.
-- **Colours:** Graphite `#374151` for text, Cyan Blue `#06b6d4` for title, icons, divider and website, Lime Green `#84cc16` in the accent bar, Warm Coral `#f97316` for the call-to-action button.
+- **Colours:** Graphite `#374151` for text, Cyan Blue `#06b6d4` for title, icons, divider and website, Cyan, Lime Green `#84cc16` and Warm Coral `#f97316` in the accent bar, and Warm Coral for the call-to-action button.
 - **Font:** Poppins, then Montserrat, then Arial. Most email apps don't load web fonts, so many readers will see Arial.
 - **Tagline:** "Designed to Flow. Built to Profit."
 - **Booking button** links to your Calendly. Delete it in the signature editor if you don't want it.
