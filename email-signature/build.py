@@ -1,8 +1,8 @@
 """Builds signature.html from the Flowline Operations Brand Book palette.
 Run: python3 build.py
-Gmail's editor strips images hosted elsewhere, so the signature carries numbered
-placeholders. After pasting it into Gmail's signature settings, replace each one
-with the matching file from upload/ (Insert image > Upload > Original size)."""
+Icons are text symbols in cyan circles (Gmail strips externally hosted images,
+but keeps text). The logo is a placeholder: after pasting into Gmail's signature
+settings, replace it with upload/flowline-logo.png (Insert image > Upload)."""
 import sys, pathlib
 HERE = pathlib.Path(__file__).parent
 GRAPHITE, CYAN, LIME, CORAL = "#374151", "#06b6d4", "#84cc16", "#f97316"
@@ -26,11 +26,23 @@ PRIVACY = ("This email and any attachments are confidential and intended only fo
            f'<a href="mailto:tristan@flowlineops.com" style="color:{MUTED};text-decoration:underline;">tristan@flowlineops.com</a>.')
 
 
-NUM = {"phone": 1, "email": 2, "web": 3, "location": 4}
+# (symbol, font). Phone: U+260F outline telephone, which has no emoji form (U+260E rendered
+# as a red emoji on Windows). Email: "@" in Arial, because the envelope symbol sat
+# off-centre in Windows' symbol font.
+SYMBOL_FONT = "'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','DejaVu Sans',Arial,sans-serif"
+ICON = {
+    "phone":    ("&#9743;", SYMBOL_FONT, "13px", "normal"),
+    "email":    ("@", "Arial,Helvetica,sans-serif", "12px", "bold"),
+    "web":      ("&#8962;", SYMBOL_FONT, "13px", "normal"),
+    "location": ("&#9906;", SYMBOL_FONT, "13px", "normal"),
+}
 
 def row(icon, content):
-    badge = (f'<div style="width:18px;height:18px;line-height:18px;border:1px dashed {CYAN};border-radius:10px;'
-             f'text-align:center;font-size:10px;font-weight:bold;color:{CYAN};font-family:Arial,sans-serif;">{NUM[icon]}</div>')
+    sym, font, size, weight = ICON[icon]
+    badge = (f'<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;"><tr>'
+             f'<td width="20" height="20" align="center" valign="middle" bgcolor="{CYAN}" '
+             f'style="width:20px;height:20px;background-color:{CYAN};border-radius:10px;color:#ffffff;'
+             f'font-size:{size};font-weight:{weight};line-height:20px;font-family:{font};text-align:center;mso-line-height-rule:exactly;">{sym}</td></tr></table>')
     return (f'<tr><td width="30" valign="middle" style="padding:4px 10px 4px 0;">{badge}</td>'
             f'<td valign="middle" style="padding:4px 0;font-size:13px;line-height:18px;color:{GRAPHITE};">{content}</td></tr>')
 

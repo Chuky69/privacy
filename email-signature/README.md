@@ -12,19 +12,19 @@ Built from the Flowline Operations Brand Book.
 - **Font:** Poppins, then Montserrat, then Arial. Most email apps don't load web fonts, so many readers will see Arial.
 - **Tagline:** "Designed to Flow. Built to Profit."
 - **Booking button** links to your Calendly. Delete it in the signature editor if you don't want it.
-- Icons are cyan circles with white symbols, as image files in `upload/` sized exactly for the signature.
+- Icons are cyan circles with white text symbols: an outline phone (no emoji version exists), @ in Arial, a house and a pin.
 - Graphite text is dark enough that dark-mode apps, including the Gmail app, flip it to light automatically.
 - **Legal footer:** company name, CRO no. 822462, registered office, and VAT no. Irish Companies Act 2014, section 151, requires company details on business letters, and the corporate enforcement regulator advises including them on emails. Directors were left out at the owner's request.
 - **Confidentiality and GDPR note:** asks misdirected recipients to delete the email and gives an email address for data requests. Add a link to a privacy page once one is live on flowlineops.com.
 - To change anything, edit `build.py` and run `python3 build.py`.
 
 ## Install (on a computer)
-Gmail strips images that are hosted elsewhere, so the logo and icons are uploaded inside Gmail.
-1. Open `signature.html` in Chrome (or the Gmail draft with it), select from your name to the end of the grey text, and copy.
+1. Copy the signature from the Gmail draft (or open `signature.html` in Chrome), from your name to the end of the grey text.
 2. In Gmail, go to Settings, See all settings, General, Signature. Delete the old signature and paste.
-3. Click the **LOGO** box, delete it, click the image icon, choose **Upload**, pick `upload/flowline-logo.png`, then click the image and choose **Original size**.
-4. Do the same for the small numbered circles: **1** = `icon-1-phone.png`, **2** = `icon-2-email.png`, **3** = `icon-3-web.png`, **4** = `icon-4-location.png`. Choose **Original size** for each.
-5. Click **Save Changes** at the bottom of the page.
+3. Click the **LOGO** box, delete it, click the image icon, choose **Upload**, pick `upload/flowline-logo.png`, then click the logo and choose **Original size**.
+4. Click **Save Changes** at the bottom of the page.
+
+Icons are text symbols in cyan circles, so they paste straight in. The logo has to be uploaded because Gmail strips images hosted elsewhere.
 
 ## Test it
 Send yourself an email and open it in the Gmail app with dark mode on, and in Gmail on desktop.
