@@ -24,8 +24,9 @@ PRIVACY = ("This email and any attachments are confidential and intended only fo
            "We process personal data in line with the GDPR. To ask about your data, email "
            f'<a href="mailto:tristan@flowlineops.com" style="color:{MUTED};text-decoration:underline;">tristan@flowlineops.com</a>.')
 
-# These symbols default to plain text style, so phones don't swap in colour emoji.
-ICON = {"phone": "&#9742;", "email": "&#9993;", "web": "&#8962;", "location": "&#9906;"}
+# Phone uses U+260F (outline telephone), which has no emoji form, so Windows/phones can't
+# swap in the red emoji phone. Envelope gets the text-style selector (&#65038;) for the same reason.
+ICON = {"phone": "&#9743;", "email": "&#9993;&#65038;", "web": "&#8962;", "location": "&#9906;"}
 # Name the system symbol fonts first so each OS centres its own glyph, instead of
 # borrowing a glyph into Arial's line metrics (which pushed the phone off-centre on Windows).
 SYMBOL_FONT = "'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','DejaVu Sans',Arial,sans-serif"
@@ -34,7 +35,7 @@ def row(icon, content):
     badge = (f'<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;"><tr>'
              f'<td width="20" height="20" align="center" valign="middle" bgcolor="{CYAN}" '
              f'style="width:20px;height:20px;background-color:{CYAN};border-radius:10px;color:#ffffff;'
-             f'font-size:12px;line-height:20px;font-family:{SYMBOL_FONT};text-align:center;mso-line-height-rule:exactly;">{ICON[icon]}</td></tr></table>')
+             f'font-size:13px;line-height:20px;font-family:{SYMBOL_FONT};text-align:center;mso-line-height-rule:exactly;">{ICON[icon]}</td></tr></table>')
     return (f'<tr><td width="30" valign="middle" style="padding:4px 10px 4px 0;">{badge}</td>'
             f'<td valign="middle" style="padding:4px 0;font-size:13px;line-height:18px;color:{GRAPHITE};">{content}</td></tr>')
 
