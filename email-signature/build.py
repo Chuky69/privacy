@@ -6,7 +6,24 @@ HERE = pathlib.Path(__file__).parent
 ICONS = (f"file://{HERE.resolve()}/icons" if "--local" in sys.argv else
          "https://raw.githubusercontent.com/Chuky69/privacy/claude/flowline-signature-theme-compat-lsi0h7/email-signature/icons")
 GRAPHITE, CYAN, LIME, CORAL = "#374151", "#06b6d4", "#84cc16", "#f97316"
+MUTED = "#6B7280"
 FONT = "Poppins,Montserrat,Arial,Helvetica,sans-serif"
+
+# Companies Act 2014, s.151: company details and directors on business letters (ODCE says emails too).
+COMPANY = {
+    "name": "Flowline Operations Limited",
+    "cro": "822462",
+    "office": "11 Sruth an Mhuillinn, Emyvale, Co. Monaghan, H18 RW62, Ireland",
+    "vat": "IE4820511MH",
+    "directors": "Tristan Messer (German), Mirko Salzer (German), Jonathan Martinez (American)",
+}
+LEGAL = (f"{COMPANY['name']} is a private company limited by shares, registered in Ireland, "
+         f"CRO no. {COMPANY['cro']}. Registered office: {COMPANY['office']}. "
+         f"VAT no. {COMPANY['vat']}. Directors: {COMPANY['directors']}.")
+PRIVACY = ("This email and any attachments are confidential and intended only for the named recipient. "
+           "If you received it in error, please tell the sender and delete it. "
+           "We process personal data in line with the GDPR. To ask about your data, email "
+           f'<a href="mailto:tristan@flowlineops.com" style="color:{MUTED};text-decoration:underline;">tristan@flowlineops.com</a>.')
 
 def row(icon, content):
     return (f'<tr><td width="30" valign="middle" style="padding:4px 10px 4px 0;">'
@@ -43,13 +60,22 @@ SIG = f'''<table cellpadding="0" cellspacing="0" border="0" role="presentation" 
 {button}
 </td>
 </tr>
-<tr><td colspan="3" style="padding-top:16px;">
+</table>
+<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;font-family:{FONT};">
+<tr><td style="padding-top:16px;">
 <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;"><tr>
 <td width="40" height="3" style="width:40px;height:3px;background-color:{CYAN};font-size:0;line-height:0;">&nbsp;</td>
 <td width="40" height="3" style="width:40px;height:3px;background-color:{LIME};font-size:0;line-height:0;">&nbsp;</td>
 <td width="40" height="3" style="width:40px;height:3px;background-color:{CORAL};font-size:0;line-height:0;">&nbsp;</td>
 </tr></table>
 <div style="padding-top:6px;font-size:11px;line-height:16px;letter-spacing:1px;font-weight:bold;color:{GRAPHITE};">DESIGNED TO FLOW. BUILT TO PROFIT.</div>
+</td></tr>
+<tr><td style="padding-top:14px;">
+<table width="480" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;width:480px;max-width:100%;"><tr>
+<td style="font-size:10px;line-height:14px;color:{MUTED};">
+<p style="margin:0 0 6px 0;">{LEGAL}</p>
+<p style="margin:0;">{PRIVACY}</p>
+</td></tr></table>
 </td></tr>
 </table>'''
 

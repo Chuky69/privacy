@@ -14,6 +14,8 @@ Built from the Flowline Operations Brand Book.
 - **Booking button** links to your Calendly. Delete it in the signature editor if you don't want it.
 - Icons are solid cyan circles hosted in this repo, so they look the same on white and black. **Keep the `icons` folder.**
 - Graphite text is dark enough that dark-mode apps, including the Gmail app, flip it to light automatically.
+- **Legal footer:** company name, CRO no. 822462, registered office, VAT no. and directors with nationality. Irish Companies Act 2014, section 151, requires these on business letters, and the corporate enforcement regulator advises including them on emails. Directors are taken from the July 2026 incorporation form (Form A1). Update `COMPANY` in `build.py` if they change.
+- **Confidentiality and GDPR note:** asks misdirected recipients to delete the email and gives an email address for data requests. Add a link to a privacy page once one is live on flowlineops.com.
 - To change anything, edit `build.py` and run `python3 build.py`.
 
 ## Install (5 minutes, on a computer)
