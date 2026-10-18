@@ -1,0 +1,875 @@
+<title>Flowline Virtual HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D scene, HUD pinned to the four corners, one reading panel bottom-left. Single dusk look by choice. */
+:root{
+  color-scheme: dark;
+  --night:#0e1520;
+  --panel:rgba(13,21,32,.9);
+  --line:rgba(150,180,210,.2);
+  --fg:#e9eef4;
+  --muted:#9aabbe;
+  --agent:#4fd3c4;
+  --human:#f3b562;
+  --pin:#ff6b5a;
+  --sim:#a99cff;
+  --ok:#7bd88f;
+  --font-display:'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --font-body:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden}
+body{background:var(--night);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.5}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#scene:active{cursor:grabbing}
+.hud{position:fixed;z-index:5;pointer-events:none}
+.hud > *{pointer-events:auto}
+#brand{top:calc(16px + env(safe-area-inset-top,0px));left:calc(16px + env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
+.wordmark{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.02em;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.wordmark small{display:block;font-family:var(--font-mono);font-weight:400;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+button{font:500 13px/1 var(--font-body);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:9px 14px;cursor:pointer;backdrop-filter:blur(8px)}
+button:hover{border-color:var(--agent)}
+button:focus-visible{outline:2px solid var(--agent);outline-offset:2px}
+button.primary{background:var(--agent);color:#062421;border-color:var(--agent)}
+button.amber{background:var(--human);color:#2a1a04;border-color:var(--human)}
+button[disabled]{opacity:.5;cursor:not-allowed}
+#mapwrap{top:calc(16px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#minimap{width:168px;height:168px;border-radius:14px;border:1px solid var(--line);background:var(--panel);cursor:crosshair}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:240px}
+.chip{font:500 11px/1 var(--font-mono);letter-spacing:.04em;padding:6px 9px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
+.chip b{color:var(--fg);font-weight:500}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+#panel{left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(390px,calc(100vw - 32px));max-height:min(52vh,560px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;backdrop-filter:blur(10px);box-shadow:0 12px 40px rgba(0,0,0,.35)}
+#panel h2{font-family:var(--font-display);font-weight:500;font-size:17px;line-height:1.25;margin:0 0 6px;text-wrap:balance}
+#panel .eyebrow{font:500 10.5px/1 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+#panel .lead,.cbody .lead{font-size:15px;margin:0 0 10px}
+#panel p{margin:0 0 10px;color:#cfd9e4}
+#panel ul,#panel ol{margin:0 0 10px;padding-left:20px;color:#cfd9e4}
+#panel li{margin:3px 0}
+#panel .note{font-size:12.5px;color:var(--muted);border-left:2px solid var(--human);padding-left:10px}
+#panel .sim{font:400 11px/1.4 var(--font-mono);color:var(--muted);margin-top:12px;letter-spacing:.02em}
+#panel dl{display:grid;grid-template-columns:76px 1fr;gap:6px 12px;margin:10px 0}
+#panel dt{font:500 11px/1.6 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#panel dd{margin:0;color:#dfe7ef;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0 12px;font-size:12.5px;color:var(--muted)}
+.agentlist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.agentlist button{padding:7px 11px;font-size:12px}
+.navrow{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.navrow .count{font:500 11px/1 var(--font-mono);color:var(--muted);margin-right:auto;letter-spacing:.06em}
+.cbody .sliders{} .sliders{display:grid;gap:10px;margin:8px 0 12px}
+.sliders label{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12.5px;color:var(--muted)}
+.sliders label output{font:500 12.5px var(--font-mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.sliders input{grid-column:1/-1;width:100%;accent-color:var(--agent)}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 12px}
+.res{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.res span{display:block;font:500 10.5px/1.3 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.res b{font:600 17px/1.3 var(--font-body);font-variant-numeric:tabular-nums}
+.res.net b{color:var(--ok)}
+.tests{list-style:none;padding:0!important}
+.tests label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.tests input{margin-top:3px;accent-color:var(--ok)}
+.steps{list-style:none;padding:0!important;counter-reset:s}
+.steps li{display:flex;gap:10px;padding:5px 8px;border-radius:8px;transition:background .3s}
+.steps li b{font-family:var(--font-mono);font-weight:500;color:var(--muted);width:16px}
+.steps li.on{background:rgba(169,156,255,.16);color:var(--fg)}
+.steps li.on b{color:var(--sim)}
+.status{display:inline-flex;align-items:center;font:500 11px/1 var(--font-mono);padding:5px 9px;border-radius:999px;border:1px solid var(--line);letter-spacing:.04em}
+#toasts{top:calc(16px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(380px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--panel);border:1px solid var(--human);border-radius:14px;padding:12px 14px;backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.35);animation:drop .35s ease-out}
+.toast.info{border-color:var(--line)}
+.toast p{margin:0 0 8px}
+.toast .who{font:500 10.5px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--human);display:block;margin-bottom:6px}
+.toast.info .who{color:var(--muted)}
+.toast .btnrow{gap:6px}
+@keyframes drop{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+#hint{bottom:calc(16px + env(safe-area-inset-bottom,0px));right:calc(16px + env(safe-area-inset-right,0px));font:400 11.5px/1.5 var(--font-mono);color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;max-width:260px}
+#hint kbd{font-family:var(--font-mono);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+#joy{position:fixed;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:1px solid var(--line);background:rgba(13,21,32,.35);z-index:4;pointer-events:none}
+#joy i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(79,211,196,.55)}
+#intro{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:linear-gradient(180deg,rgba(9,14,22,.55),rgba(9,14,22,.85));padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+.introcard{max-width:560px;display:flex;flex-direction:column;gap:14px}
+.introcard .kicker{font:500 11px/1 var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--agent)}
+.introcard h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,6vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.introcard h1 em{font-style:normal;color:var(--agent)}
+.introcard p{margin:0;font-size:15.5px;color:#cfd9e4;max-width:60ch}
+.introcard .fine{font:400 12px/1.5 var(--font-mono);color:var(--muted)}
+.introcard .btnrow button{padding:12px 18px;font-size:14px}
+#classic{position:fixed;inset:0;z-index:15;background:var(--night);overflow:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(16px + env(safe-area-inset-top,0px)) 24px}
+.cwrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.chead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.cnav{display:flex;flex-wrap:wrap;gap:6px}
+.cnav button[aria-current="true"]{background:var(--agent);color:#062421;border-color:var(--agent)}
+.cbody{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.cbody h2{font-family:var(--font-display);font-weight:500;font-size:20px;margin:0 0 8px}
+.cbody .eyebrow{font:500 10.5px/1 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+.cbody p,.cbody li{color:#cfd9e4;max-width:68ch}
+.cbody .note{font-size:12.5px;color:var(--muted);border-left:2px solid var(--human);padding-left:10px}
+.cbody .sim{font:400 11px/1.4 var(--font-mono);color:var(--muted)}
+.cbody dl{display:grid;grid-template-columns:76px 1fr;gap:6px 12px}
+.cbody dt{font:500 11px/1.6 var(--font-mono);text-transform:uppercase;color:var(--muted)} .cbody dd{margin:0}
+.cbody canvas{max-width:520px}
+.ctable{width:100%;border-collapse:collapse;font-size:13px;display:block;overflow-x:auto}
+.ctable th,.ctable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.ctable th{font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ctable td button{padding:6px 10px;font-size:12px}
+.cbody .sliders,.cbody .results,.cbody .steps,.cbody .tests,.cbody .agentlist,.cbody .navrow,.cbody .legend{max-width:560px}
+@media (max-width:640px){
+  #hint{display:none}
+  #minimap{width:92px;height:92px}
+  .chips{display:none}
+  #brand{max-width:calc(100vw - 140px)}
+  #panel{max-height:38vh;padding:14px}
+  #panel h2{font-size:15px}
+  .wordmark{font-size:15px}
+  #brand .btnrow button{padding:8px 11px;font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+</style>
+
+<canvas id="scene" aria-label="Walkable 3D model of the Flowline virtual headquarters"></canvas>
+
+<div class="hud" id="brand">
+  <div class="wordmark">Flowline HQ<small>Virtual headquarters · concept prototype</small></div>
+  <div class="btnrow">
+    <button id="btnTour" class="primary">Guided tour</button>
+    <button id="btnWalk">Free walk</button>
+    <button id="btnVR">Enter VR</button>
+    <button id="btnClassic">Classic view</button>
+  </div>
+</div>
+
+<div class="hud" id="mapwrap">
+  <canvas id="minimap" width="336" height="336" aria-label="Map of the HQ. Click to jump to a spot."></canvas>
+  <div class="chips">
+    <span class="chip"><span class="dot" style="background:var(--agent)"></span><b id="cAgents">8</b> agents</span>
+    <span class="chip"><span class="dot" style="background:var(--human)"></span><b id="cHumans">1</b> person</span>
+    <span class="chip">Approvals <b id="cApprovals">0</b></span>
+  </div>
+</div>
+
+<div class="hud" id="toasts" aria-live="polite"></div>
+<div class="hud" id="panel" role="region" aria-label="Room information"></div>
+<div class="hud" id="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · drag to look · <kbd>Shift</kbd> run<br>Click a figure to meet it · click the map to jump</div>
+<div id="joy" hidden><i></i></div>
+
+<div id="classic" hidden role="dialog" aria-label="Classic view without 3D">
+  <div class="cwrap">
+    <div class="chead"><div class="wordmark">Flowline HQ<small>Classic view · same functions, no 3D</small></div><button id="classicClose" class="primary">Back to 3D</button></div>
+    <nav id="classicNav" class="cnav" aria-label="Rooms"></nav>
+    <div id="classicBody" class="cbody"></div>
+  </div>
+</div>
+
+<div id="intro">
+  <div class="introcard">
+    <span class="kicker">Flowline Operations</span>
+    <h1>The first headquarters where people and <em>agents</em> work side by side.</h1>
+    <p>A registered HQ you can find on Google Maps, built only for the Flowline team and its FLOW OS agents. Walk through the Commons, reception, the agent task floor, the client wing, the security harness, the Living Network room, the Intent Engine lab and the control room. Prefer no 3D? Open the classic view: every room works there too.</p>
+    <div class="btnrow">
+      <button id="introTour" class="primary">Start the guided tour</button>
+      <button id="introWalk">Walk around on my own</button>
+    </div>
+    <p class="fine">Concept prototype. Agents, activity and numbers are simulated for illustration.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+if(!window.THREE){document.getElementById('panel').innerHTML='<h2>3D engine did not load</h2><p>Check the connection and reload the page.</p>';return;}
+
+// ---------- content ----------
+const STATUS = {
+  'Working':{c:'#4fd3c4'}, 'In simulation':{c:'#a99cff'}, 'Idle':{c:'#9aabbe'},
+  'Waiting for approval':{c:'#f3b562'}, 'On an errand':{c:'#7fb6ff'}, 'In the office':{c:'#f3b562'}
+};
+const AGENTS = [
+  {id:'ava',name:'Ava',role:'Reception agent',kind:'agent',home:[0,9.6,0],
+   brain:'Remembers every visitor, their company and their last question.',
+   soul:'The first voice of Flowline. Calm, warm, never rushed.',
+   goal:'Every visitor feels expected and reaches the right person within two minutes.',
+   values:'Courtesy first · never guesses · hands over, never drops',
+   niche:'Turns a first sentence into the right next step.',
+   tasks:['Greeting a visitor from the plaza','Booking a discovery call','Routing a supplier question']},
+  {id:'rio',name:'Rio',role:'Lead signal agent',kind:'agent',home:[-20,-1.95,0],
+   brain:'Every signal it has scored and which ones became customers.',
+   soul:'A patient scout. Reports what it sees, never what it hopes.',
+   goal:'Five qualified conversations for the sales team every week.',
+   values:'Public data only · no spam · shows its evidence',
+   niche:'Spots buying signals in public company data before anyone else.',
+   tasks:['Scanning hiring posts for ops pain','Scoring 38 new signals','Drafting outreach for review'],
+   request:'Send 12 outreach emails to new signal leads'},
+  {id:'iris',name:'Iris',role:'ICP agent',kind:'agent',home:[-15,-1.95,0],
+   brain:'The ideal customer profile and every exception that proved it wrong.',
+   soul:'A careful judge with a good memory.',
+   goal:'Keep the pipeline full of companies Flowline can truly help.',
+   values:'Fit over volume · explains every score · admits doubt',
+   niche:'Scores fit against the ideal customer profile in seconds.',
+   tasks:['Re-scoring the Monaghan list','Flagging stale leads','Updating fit rules'],
+   request:'Remove 40 stale leads from the CRM'},
+  {id:'rex',name:'Rex',role:'Report agent',kind:'agent',home:[-10,-1.95,0],
+   brain:'Each client’s baseline, targets and last six reports.',
+   soul:'The one who makes numbers make sense.',
+   goal:'A client-ready report every month, on time, with no wrong figure.',
+   values:'Source every number · plain words · no surprises',
+   niche:'Turns raw operations data into a report a director reads in five minutes.',
+   tasks:['Building the October client report','Checking figures against invoices','Writing the summary page'],
+   request:'Release the October report to the client'},
+  {id:'tess',name:'Tess',role:'Territory agent',kind:'agent',home:[-20,4.05,0],
+   brain:'Regions, routes and where each field visit went well.',
+   soul:'A map-maker who thinks in distances and days.',
+   goal:'Field teams spend their time with customers, not on the road.',
+   values:'Shortest fair route · respects working hours · shows trade-offs',
+   niche:'Maps regions and routes so a week of visits fits into four days.',
+   tasks:['Planning next week’s routes','Balancing two territories','Simulating a new depot']},
+  {id:'lynn',name:'Lynn',role:'Content agent',kind:'agent',home:[-15,4.05,0],
+   brain:'The Flowline voice, every post and how each one landed.',
+   soul:'A storyteller who keeps it short.',
+   goal:'Two posts a week that make operators stop scrolling.',
+   values:'On brand · true claims only · credits the team',
+   niche:'Writes in the Flowline voice: designed to flow, built to profit.',
+   tasks:['Drafting the virtual HQ teaser','Cutting a case study to 120 words','Scheduling posts'],
+   request:'Publish the virtual HQ teaser post on LinkedIn'},
+  {id:'mo',name:'Mo',role:'Resource match agent',kind:'agent',home:[-19.6,-14.6,2.3],
+   brain:'Every surplus, need and verified exchange in the Living Network.',
+   soul:'A connector. Happiest when two strangers both win.',
+   goal:'Verified resource loops between Monaghan businesses.',
+   values:'Safety checks first · measured savings only · fair to both sides',
+   niche:'Matches one company’s surplus to another company’s need.',
+   tasks:['Matching pallet surplus to buyers','Checking ISPM 15 requirements','Comparing invoices before and after'],
+   request:'Share pallet volumes with the distributor'},
+  {id:'ward',name:'Ward',role:'Harness warden',kind:'agent',home:[11.6,4.6,1.2],
+   brain:'Every permission, every action log and every rollback.',
+   soul:'The steady one. Protects the team by saying no early.',
+   goal:'No agent ever acts outside its role.',
+   values:'Least access · log everything · pausing is care, not punishment',
+   niche:'Checks every action against its permission before it runs.',
+   tasks:['Reviewing today’s action log','Testing a new agent in simulation','Rotating access keys']},
+  {id:'tristan',name:'Tristan',role:'Managing Director',kind:'human',home:[0,-25.4,0],
+   brain:'The whole picture: clients, people, agents and where Flowline is going.',
+   soul:'Founder of Flowline Operations.',
+   goal:'Build the first company where people and agents work as one team.',
+   values:'Designed to flow · built to profit · no harm, best interest of human and AI',
+   niche:'Sees the system behind the business.',
+   tasks:['Approving decisions from the floor','Reviewing the Living Network pilot','Planning the HQ launch']}
+];
+
+const STEPS = ['Intent: state the outcome and how success is measured','Discover: reverse engineering finds how the system really works','Design backwards: turn the outcome into constraints','Encode: write the mechanism as rules or a small program','Verify: check it against real outcomes','Remember: store the procedure with its tests','Package: ship it as one HTML knowledge pack'];
+const STEP_SHORT = ['Intent','Discover','Design back','Encode','Verify','Remember','Package'];
+
+const ZONES = [
+  {id:'plaza',name:'Outside the HQ',x:0,z:33,r:13,col:'#8fb3d9'},
+  {id:'reception',name:'Reception',x:0,z:12.5,r:5.5,col:'#f3b562'},
+  {id:'floor',name:'Agent task floor',x:-15,z:2,r:9,col:'#4fd3c4'},
+  {id:'harness',name:'The Harness',x:15,z:2,r:7,col:'#7fb6ff'},
+  {id:'network',name:'Living Network room',x:-15,z:-18,r:8,col:'#7bd88f'},
+  {id:'lab',name:'Intent Engine lab',x:15,z:-18,r:8,col:'#a99cff'},
+  {id:'control',name:'Control room',x:0,z:-24,r:6,col:'#ff8a6b'},
+  {id:'client',name:'Client wing',x:0,z:-5,r:5,col:'#ffd27a'},
+  {id:'commons',name:'The Commons',x:22,z:34,r:7.5,col:'#ff9ec7'}
+];
+const TOUR = [
+  {zone:'plaza',pos:[0,40],look:[0,9,-20]},
+  {zone:'commons',pos:[13,41],look:[22,1.8,34]},
+  {zone:'reception',pos:[0,17.5],look:[0,1.6,9.5]},
+  {zone:'floor',pos:[-7.5,9.5],look:[-15,1,1]},
+  {zone:'client',pos:[0,1.2],look:[0,1.9,-9.3]},
+  {zone:'harness',pos:[9.5,9],look:[15,1.6,2]},
+  {zone:'network',pos:[-9.5,-12],look:[-15,1,-18]},
+  {zone:'lab',pos:[9.5,-10.5],look:[15,1.6,-20]},
+  {zone:'control',pos:[0,-18.5],look:[0,3.2,-29.6]}
+];
+
+// ---------- renderer ----------
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+(function(){
+  const c=document.createElement('canvas'); c.width=4; c.height=512; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,512);
+  gr.addColorStop(0,'#0a1424'); gr.addColorStop(.45,'#1f3a5a'); gr.addColorStop(.72,'#7c6a7e'); gr.addColorStop(.86,'#d9906e'); gr.addColorStop(1,'#f0c08f');
+  g.fillStyle=gr; g.fillRect(0,0,4,512);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; scene.background=t;
+})();
+scene.fog = new THREE.Fog(0x3b4a63, 70, 190);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 500);
+const rig = new THREE.Group(); rig.add(camera); scene.add(rig);
+camera.position.set(0,1.65,0);
+let yaw = 0, pitch = 0;
+rig.position.set(0,0,42);
+
+scene.add(new THREE.HemisphereLight(0xc4d8ff, 0x3a3028, 0.8));
+const sun = new THREE.DirectionalLight(0xffd6ae, 0.95);
+sun.position.set(45,60,35); sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-60,right:60,top:60,bottom:-60,near:1,far:200});
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x8fb3ff, 0.25); fill.position.set(-40,30,-30); scene.add(fill);
+
+const M = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({color, roughness:.82, metalness:.04}, o));
+const solids = [];
+function solid(cx,cz,w,d){ solids.push({x0:cx-w/2,x1:cx+w/2,z0:cz-d/2,z1:cz+d/2}); }
+function box(w,h,d,mat,x,y,z,cast=true,recv=true){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=cast; m.receiveShadow=recv; scene.add(m); return m; }
+
+// ---------- canvas labels ----------
+function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function drawTag(g,w,h,o){
+  g.clearRect(0,0,w,h);
+  g.fillStyle=o.bg||'rgba(11,19,30,.86)'; roundRect(g,4,4,w-8,h-8,(h-8)/2.6); g.fill();
+  g.strokeStyle=o.stroke||'rgba(160,190,220,.35)'; g.lineWidth=3; g.stroke();
+  let x=o.dot? 70:w/2; g.textAlign=o.dot?'left':'center';
+  if(o.dot){ g.fillStyle=o.dot; g.beginPath(); g.arc(40,h/2,13,0,Math.PI*2); g.fill(); }
+  g.fillStyle=o.fg||'#e9eef4'; g.textBaseline='middle';
+  if(o.sub){
+    g.font='600 '+(o.size||46)+'px "IBM Plex Sans", sans-serif'; g.fillText(o.title,x,h*0.38);
+    g.font='400 '+Math.round((o.size||46)*0.62)+'px "IBM Plex Mono", monospace'; g.fillStyle=o.subc||'#9aabbe'; g.fillText(o.sub,x,h*0.7);
+  } else { g.font=(o.weight||'600')+' '+(o.size||52)+'px '+(o.family||'"IBM Plex Sans", sans-serif'); g.fillText(o.title,x,h/2); }
+}
+function tag(o, scale=0.5, w=640, h=150){
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d'); drawTag(g,w,h,o);
+  const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding; tex.anisotropy=4;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+  sp.scale.set(scale*w/h, scale, 1); sp.userData={g,w,h,tex}; return sp;
+}
+function retag(sp,o){ drawTag(sp.userData.g,sp.userData.w,sp.userData.h,o); sp.userData.tex.needsUpdate=true; }
+function floorText(text,x,z,col,size=3.2,rot=0){
+  const c=document.createElement('canvas'); c.width=1024; c.height=160; const g=c.getContext('2d');
+  g.fillStyle=col; g.font='700 78px "Unbounded", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.globalAlpha=.75; g.fillText(text.toUpperCase(),512,84);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=8;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(size*6.4,size),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2; m.rotation.z=rot; m.position.set(x,0.23,z); scene.add(m); return m;
+}
+function signPlane(drawFn,w,h,px,py,pz,ry=0,cw=1024){
+  const ch=Math.round(cw*h/w); const c=document.createElement('canvas'); c.width=cw; c.height=ch; const g=c.getContext('2d'); drawFn(g,cw,ch);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=8;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));
+  m.position.set(px,py,pz); m.rotation.y=ry; scene.add(m); m.userData={g,cw,ch,t,drawFn}; return m;
+}
+
+// ---------- world ----------
+let rngSeed=7; const rnd=()=>{rngSeed=(rngSeed*16807)%2147483647; return (rngSeed-1)/2147483646;};
+function buildWorld(){
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),M(0x2c3b33,{roughness:1})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+  const plaza=new THREE.Mesh(new THREE.PlaneGeometry(76,34),M(0x666d76,{roughness:.95})); plaza.rotation.x=-Math.PI/2; plaza.position.set(0,0.02,37); plaza.receiveShadow=true; scene.add(plaza);
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(500,9),M(0x262a30,{roughness:.9})); road.rotation.x=-Math.PI/2; road.position.set(0,0.03,58.5); scene.add(road);
+  for(let x=-240;x<240;x+=8){ const l=new THREE.Mesh(new THREE.PlaneGeometry(3.2,.25),new THREE.MeshBasicMaterial({color:0xd8d2b8})); l.rotation.x=-Math.PI/2; l.position.set(x,0.04,58.5); scene.add(l); }
+  const path=new THREE.Mesh(new THREE.PlaneGeometry(8,14),M(0x7f868f,{roughness:.9})); path.rotation.x=-Math.PI/2; path.position.set(0,0.035,27); scene.add(path);
+
+  // floor slab
+  box(60.6,0.24,50.6,M(0xa9b0b9,{roughness:.75}),0,0.12,-5,false,true);
+  // glass walls
+  const glass=new THREE.MeshStandardMaterial({color:0xa8d8ff,transparent:true,opacity:.16,roughness:.08,metalness:.4,depthWrite:false,side:THREE.DoubleSide});
+  const frame=M(0x1d2733,{metalness:.5,roughness:.4});
+  const H=7;
+  function wall(cx,cz,w,d){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,H,d),glass); m.position.set(cx,H/2+.24,cz); scene.add(m); solid(cx,cz,Math.max(w,.6),Math.max(d,.6)); }
+  wall(-17,20,26,.2); wall(17,20,26,.2); wall(0,-30,60,.2); wall(-30,-5,.2,50); wall(30,-5,.2,50);
+  // door header + mullions
+  box(8,1.1,.35,frame,0,H-.3,20,false,false);
+  for(let x=-30;x<=30;x+=5){ if(Math.abs(x)<4.5) continue; box(.18,H,.3,frame,x,H/2+.24,20,false,false); box(.18,H,.3,frame,x,H/2+.24,-30,false,false); }
+  for(let z=-30;z<=20;z+=5){ box(.3,H,.18,frame,-30,H/2+.24,z,false,false); box(.3,H,.18,frame,30,H/2+.24,z,false,false); }
+  box(-4.5+30.6, .25,.4,frame,0,.24,20,false,false);
+  // roof ring
+  box(61,.5,.9,frame,0,H+.4,20,true,false); box(61,.5,.9,frame,0,H+.4,-30,true,false);
+  box(.9,.5,51,frame,-30,H+.4,-5,true,false); box(.9,.5,51,frame,30,H+.4,-5,true,false);
+  for(let x=-25;x<=25;x+=10) box(.35,.35,50,frame,x,H+.4,-5,true,false);
+  // entrance canopy
+  box(12,.3,6,M(0x24303d,{metalness:.4,roughness:.5}),0,4.4,23,true,false);
+  box(.25,4.3,.25,frame,-5.6,2.2,25.6); box(.25,4.3,.25,frame,5.6,2.2,25.6);
+  signPlane((g,w,h)=>{g.fillStyle='#0f1824';g.fillRect(0,0,w,h);g.fillStyle='#e9eef4';g.font='700 92px "Unbounded", sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('FLOWLINE',w/2,h*.42);g.fillStyle='#4fd3c4';g.font='500 40px "IBM Plex Mono", monospace';g.fillText('OPERATIONS · VIRTUAL HQ',w/2,h*.78);},10,1.4,0,5.2,26.05);
+
+  // landmark tower
+  const towerMat=M(0x1a2633,{metalness:.6,roughness:.35});
+  box(16,30,10,towerMat,0,15,-42,true,true); solid(0,-42,16,10);
+  for(let y=3;y<30;y+=2.4){ const s=new THREE.Mesh(new THREE.BoxGeometry(16.1,.12,10.1),new THREE.MeshBasicMaterial({color:0x4fd3c4,transparent:true,opacity:.35})); s.position.set(0,y,-42); scene.add(s); }
+  signPlane((g,w,h)=>{g.fillStyle='#0f1824';g.fillRect(0,0,w,h);g.strokeStyle='#4fd3c4';g.lineWidth=10;g.beginPath();for(let i=0;i<3;i++){g.moveTo(80,h*.3+i*60);g.bezierCurveTo(300,h*.1+i*60,500,h*.6+i*60,w-80,h*.3+i*60);}g.stroke();g.fillStyle='#e9eef4';g.font='700 120px "Unbounded", sans-serif';g.textAlign='center';g.fillText('FLOWLINE',w/2,h*.9);},12,6,0,22,-36.9);
+
+  // Google Maps style pin over the tower
+  const pin=new THREE.Group();
+  const pinMat=M(0xff6b5a,{emissive:0x5a1810,roughness:.4});
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(2.4,32,24),pinMat); ball.position.y=3.2; pin.add(ball);
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(2.05,4.4,32),pinMat); cone.rotation.x=Math.PI; cone.position.y=.6; pin.add(cone);
+  const hole=new THREE.Mesh(new THREE.SphereGeometry(.95,24,16),M(0xffffff,{emissive:0x666666})); hole.position.set(0,3.3,1.75); pin.add(hole);
+  pin.position.set(0,33,-42); scene.add(pin); world.pin=pin;
+  const pinTag=tag({title:'On Google Maps',sub:'Registered seat · 3D model',size:44},1.6); pinTag.position.set(0,41,-42); scene.add(pinTag);
+
+  // plaza monolith sign
+  box(.6,3.2,4.8,M(0x1a2430,{metalness:.3,roughness:.5}),-12,1.6,31); solid(-12,31,.8,5);
+  signPlane((g,w,h)=>{g.fillStyle='#121c28';g.fillRect(0,0,w,h);g.fillStyle='#4fd3c4';g.font='500 34px "IBM Plex Mono", monospace';g.fillText('FLOWLINE OPERATIONS',50,90);g.fillStyle='#e9eef4';g.font='700 64px "Unbounded", sans-serif';g.fillText('Virtual',50,190);g.fillText('Headquarters',50,265);g.fillStyle='#b9c6d4';g.font='400 34px "IBM Plex Sans", sans-serif';['Registered seat, visible on Google Maps','Inside: the Flowline team and its agents','Built on FLOW OS'].forEach((t,i)=>g.fillText(t,50,360+i*52));},4.6,3,-11.68,1.65,31,Math.PI/2,1024);
+
+  // trees
+  const trunk=M(0x4a3626), leafA=M(0x2f5a3c), leafB=M(0x3e6b45);
+  for(let i=0;i<120;i++){
+    const x=(rnd()-.5)*200, z=(rnd()-.5)*200-10;
+    if(x>-38&&x<38&&z>-52&&z<56) continue; if(z>52&&z<66) continue;
+    const s=.8+rnd()*1.1; const t=new THREE.Group();
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(.18*s,.25*s,1.6*s,6),trunk); tr.position.y=.8*s; t.add(tr);
+    const lf=new THREE.Mesh(new THREE.ConeGeometry(1.5*s,3.6*s,7),rnd()>.5?leafA:leafB); lf.position.y=3.2*s; lf.castShadow=true; t.add(lf);
+    t.position.set(x,0,z); scene.add(t);
+  }
+  for(let i=0;i<10;i++){ const x=-34+i*7.5; if(Math.abs(x)<5) continue; const t=new THREE.Group(); const tr=new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,1.4,6),trunk); tr.position.y=.7; t.add(tr); const lf=new THREE.Mesh(new THREE.SphereGeometry(1.2,10,8),leafB); lf.position.y=2.2; lf.castShadow=true; t.add(lf); t.position.set(x,0,48); scene.add(t); solid(x,48,.6,.6); }
+
+  // zone discs + floor labels
+  ZONES.forEach(zn=>{ if(zn.id==='plaza') return;
+    const d=new THREE.Mesh(new THREE.RingGeometry(zn.r-.18,zn.r,64),new THREE.MeshBasicMaterial({color:new THREE.Color(zn.col),transparent:true,opacity:.55,depthWrite:false}));
+    d.rotation.x=-Math.PI/2; d.position.set(zn.x,.245,zn.z); scene.add(d);
+    const f=new THREE.Mesh(new THREE.CircleGeometry(zn.r,64),new THREE.MeshBasicMaterial({color:new THREE.Color(zn.col),transparent:true,opacity:.07,depthWrite:false}));
+    f.rotation.x=-Math.PI/2; f.position.set(zn.x,.242,zn.z); scene.add(f);
+  });
+  floorText('Agent task floor',-15,9.6,'#4fd3c4',1.3);
+  floorText('The Harness',15,8.6,'#7fb6ff',1.3);
+  floorText('Living Network',-15,-10.6,'#7bd88f',1.3);
+  floorText('Intent Engine lab',15,-10.6,'#a99cff',1.3);
+  floorText('Control room',0,-18.6,'#ff8a6b',1.1);
+  floorText('Reception',0,16.4,'#f3b562',1.1);
+
+  // reception
+  const wood=M(0xb88a5e,{roughness:.6}), white=M(0xeef1f4,{roughness:.4});
+  box(6.4,1.05,1.2,wood,0,.76,10.8); box(6.6,.08,1.4,white,0,1.32,10.8); solid(0,10.8,6.6,1.4);
+  const wel=tag({title:'Welcome to Flowline HQ',size:50},.9); wel.position.set(0,4.4,10.8); scene.add(wel);
+  for(const x of [-8,8]){ box(2.6,.45,1,M(0x33465a),x,.47,13.5); solid(x,13.5,2.6,1); }
+
+  // task floor desks
+  const deskMat=M(0xdfe3e8,{roughness:.5}), legMat=M(0x3a4552,{metalness:.5});
+  const screenMat=new THREE.MeshBasicMaterial({color:0x4fd3c4});
+  const deskSpots=[[-20,-1],[-15,-1],[-10,-1],[-20,5],[-15,5],[-10,5]];
+  deskSpots.forEach(([x,z],i)=>{
+    box(2.3,.08,1.1,deskMat,x,1.02,z); box(.08,.8,1,legMat,x-1.05,.62,z,false); box(.08,.8,1,legMat,x+1.05,.62,z,false);
+    const mon=box(1,.58,.06,i===5?M(0x2a3542):screenMat,x,1.42,z+.32,false,false);
+    box(.08,.3,.08,legMat,x,1.17,z+.36,false);
+    solid(x,z,2.4,1.2);
+  });
+  const nh=tag({title:'Next hire',sub:'Desk ready · no lease',size:44},.55); nh.position.set(-10,2.3,5.6); scene.add(nh);
+
+  // harness: six pillars
+  const hx=15,hz=2; const pillarMat=M(0x2a3b52,{metalness:.4,roughness:.4});
+  const ctrls=['Least access','Every action logged','Human approval for risk','Simulation before live','Model swap keeps identity','Pause and roll back'];
+  world.harnessCaps=[];
+  ctrls.forEach((t,i)=>{ const a=i/6*Math.PI*2+Math.PI/6; const x=hx+Math.cos(a)*4.4, z=hz+Math.sin(a)*4.4;
+    const p=new THREE.Mesh(new THREE.CylinderGeometry(.35,.42,3,16),pillarMat); p.position.set(x,1.74,z); p.castShadow=true; scene.add(p); solid(x,z,.9,.9);
+    const cap=new THREE.Mesh(new THREE.SphereGeometry(.38,20,14),new THREE.MeshBasicMaterial({color:0x7fb6ff})); cap.position.set(x,3.45,z); scene.add(cap); world.harnessCaps.push(cap);
+    const tg=tag({title:t,size:44},.42); tg.position.set(x,4.3,z); scene.add(tg);
+  });
+  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.1,1),new THREE.MeshStandardMaterial({color:0x7fb6ff,emissive:0x1f4a80,wireframe:true}));
+  core.position.set(hx,2.2,hz); scene.add(core); world.core=core;
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.8,.06,8,64),new THREE.MeshBasicMaterial({color:0x7fb6ff})); ring.rotation.x=Math.PI/2; ring.position.set(hx,.32,hz); scene.add(ring);
+  solid(hx,hz,1.6,1.6);
+
+  // living network table
+  const nx=-15,nz=-18;
+  const table=new THREE.Mesh(new THREE.CylinderGeometry(3.4,3.4,.12,48),M(0x24313f,{roughness:.5})); table.position.set(nx,1,nz); table.castShadow=true; table.receiveShadow=true; scene.add(table);
+  const ped=new THREE.Mesh(new THREE.CylinderGeometry(.6,1,.9,24),M(0x1a2430)); ped.position.set(nx,.6,nz); scene.add(ped);
+  solid(nx,nz,6.4,6.4);
+  const mini=[
+    {n:'Manufacturer',sub:'surplus pallets',x:nx-2.1,z:nz-1.1,w:.9,h:.75,d:.9,c:0x6f87a8},
+    {n:'Repair workshop',sub:'inspect and grade',x:nx,z:nz+1.6,w:.75,h:.5,d:.7,c:0xd59a4d},
+    {n:'Distributor',sub:'buys pallets',x:nx+2.1,z:nz-1.1,w:1.05,h:.6,d:.75,c:0x4fb3a6}
+  ];
+  mini.forEach(b=>{ box(b.w,b.h,b.d,M(b.c,{roughness:.6}),b.x,1.06+b.h/2,b.z); const t=tag({title:b.n,sub:b.sub,size:44},.32); t.position.set(b.x,1.06+b.h+.42,b.z); scene.add(t); });
+  const y=1.12;
+  world.curves=[
+    new THREE.CatmullRomCurve3([new THREE.Vector3(mini[0].x,y,mini[0].z),new THREE.Vector3(nx-1.5,y,nz+1.2),new THREE.Vector3(mini[1].x,y,mini[1].z)]),
+    new THREE.CatmullRomCurve3([new THREE.Vector3(mini[1].x,y,mini[1].z),new THREE.Vector3(nx+1.5,y,nz+1.2),new THREE.Vector3(mini[2].x,y,mini[2].z)])
+  ];
+  world.curves.forEach(c=>{ const tube=new THREE.Mesh(new THREE.TubeGeometry(c,40,.03,8,false),new THREE.MeshBasicMaterial({color:0x7bd88f,transparent:true,opacity:.7})); scene.add(tube); });
+  world.pallets=[]; const palMat=M(0xc79a62,{roughness:.8});
+  for(let i=0;i<30;i++){ const m=new THREE.Mesh(new THREE.BoxGeometry(.16,.05,.16),palMat); scene.add(m); world.pallets.push({m,t:rnd(),c:i%2}); }
+  const lnTitle=tag({title:'One pallet loop · Monaghan pilot',size:44},.55); lnTitle.position.set(nx,3.2,nz); scene.add(lnTitle);
+
+  // intent lab pillars
+  const lx=15,lz=-18; world.labPillars=[];
+  STEP_SHORT.forEach((s,i)=>{ const a=Math.PI+i/6*Math.PI; const x=lx+Math.cos(a)*5.2, z=lz+Math.sin(a)*5.2; const h=1.1+i*.28;
+    const mat=new THREE.MeshStandardMaterial({color:0x3a3566,emissive:0x2a2160,roughness:.4});
+    const p=new THREE.Mesh(new THREE.BoxGeometry(.85,h,.85),mat); p.position.set(x,.24+h/2,z); p.castShadow=true; scene.add(p); solid(x,z,1,1);
+    const t=tag({title:(i+1)+'  '+s,size:46},.42); t.position.set(x,.24+h+.6,z); scene.add(t);
+    world.labPillars.push({p,mat,top:new THREE.Vector3(x,.24+h+.15,z)});
+  });
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,20,14),new THREE.MeshBasicMaterial({color:0xd8d0ff})); scene.add(orb); world.orb=orb;
+  const pack=new THREE.Mesh(new THREE.BoxGeometry(.9,1.2,.08),new THREE.MeshBasicMaterial({color:0xa99cff,transparent:true,opacity:.6})); pack.position.set(lx,1.6,lz+.5); scene.add(pack); world.pack=pack;
+  const packTag=tag({title:'HTML knowledge pack',sub:'runs with no AI',size:44},.45); packTag.position.set(lx,2.7,lz+.5); scene.add(packTag);
+
+  // client wing: board, test bench
+  box(7.6,3.6,.2,M(0x0c121a),0,2.5,-9.5,false,false); solid(0,-9.5,7.6,.4);
+  world.board=signPlane(drawBoard,7.2,3.2,0,2.5,-9.38,0,1200);
+  box(2.4,.08,1.1,M(0x2b3846,{roughness:.5}),3.2,1.02,-4.6); box(.1,.8,1,legMat,2.1,.62,-4.6,false); box(.1,.8,1,legMat,4.3,.62,-4.6,false); solid(3.2,-4.6,2.5,1.2);
+  world.benchMods=[];
+  for(let i=0;i<3;i++){ const m=box(.42,.32,.42,M(0x4a5a70,{roughness:.4}),2.5+i*.7,1.22,-4.6); world.benchMods.push(m); }
+  world.benchLight=new THREE.Mesh(new THREE.SphereGeometry(.16,16,12),new THREE.MeshBasicMaterial({color:0xf3b562})); world.benchLight.position.set(4.2,1.5,-4.95); scene.add(world.benchLight);
+  const tb=tag({title:'Test bench',sub:'clients see what really works',size:44},.42); tb.position.set(3.2,2.3,-4.6); scene.add(tb);
+  floorText('Client wing',0,-.6,'#ffd27a',1.0);
+
+  // the commons pavilion (outside, east of the plaza)
+  const cx=22,cz=34;
+  const pav=new THREE.Mesh(new THREE.CylinderGeometry(6.6,6.6,.16,48),M(0xb9b2bf,{roughness:.8})); pav.position.set(cx,.08,cz); pav.receiveShadow=true; scene.add(pav);
+  for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; box(.22,4,.22,frame,cx+Math.cos(a)*6,2.1,cz+Math.sin(a)*6); solid(cx+Math.cos(a)*6,cz+Math.sin(a)*6,.4,.4); }
+  const canopy=new THREE.Mesh(new THREE.CylinderGeometry(6.9,6.9,.22,48),M(0x2a2333,{metalness:.3,roughness:.5})); canopy.position.set(cx,4.15,cz); canopy.castShadow=true; scene.add(canopy);
+  const basin=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.9,.7,40),M(0x3a3044,{roughness:.5})); basin.position.set(cx,.5,cz); scene.add(basin); solid(cx,cz,3.6,3.6);
+  world.poolLiquid=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.6,40),new THREE.MeshStandardMaterial({color:0xff9ec7,emissive:0x7a2a52,transparent:true,opacity:.85}));
+  world.poolLiquid.position.set(cx,.85,cz); scene.add(world.poolLiquid);
+  const eq=tag({title:'dE/dt = \u03b2 \u00b7 (C \u2212 D) \u00b7 E',sub:'the Love Equation · cooperation grows the commons',size:46},.62); eq.position.set(cx,3.2,cz); scene.add(eq);
+  world.rackLights=[];
+  for(let i=0;i<3;i++){ const rz=cz-2.4+i*2.4; box(.9,2.2,1.6,M(0x161d27,{metalness:.6,roughness:.35}),cx+4.3,1.25,rz); solid(cx+4.3,rz,1,1.7);
+    for(let k=0;k<5;k++){ const l=new THREE.Mesh(new THREE.BoxGeometry(.04,.06,1.2),new THREE.MeshBasicMaterial({color:0x4fd3c4})); l.position.set(cx+3.83,.5+k*.38,rz); scene.add(l); world.rackLights.push(l); } }
+  const rk=tag({title:'Shared inference pool',sub:'spare capacity, fairly shared',size:44},.48); rk.position.set(cx+4.3,3,cz); scene.add(rk);
+
+  // neighbouring client HQs: the network of virtual companies
+  [[-66,-6,'Client HQ','your company here'],[66,-6,'Client HQ','next floor of the network']].forEach(([x,z,t,sub])=>{
+    box(20,16,20,M(0x223040,{metalness:.5,roughness:.4}),x,8,z); solid(x,z,20,20);
+    for(let y=2;y<16;y+=2.2){ const st=new THREE.Mesh(new THREE.BoxGeometry(20.1,.1,20.1),new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:.28})); st.position.set(x,y,z); scene.add(st); }
+    const tg=tag({title:t,sub,size:46},1.4); tg.position.set(x,19,z); scene.add(tg);
+  });
+
+  // control room
+  box(3.4,.08,1.4,deskMat,0,1.02,-23.6); box(.08,.8,1.3,legMat,-1.6,.62,-23.6,false); box(.08,.8,1.3,legMat,1.6,.62,-23.6,false); solid(0,-23.6,3.4,1.4);
+  world.screen=signPlane(drawScreen,13,5.4,0,3.6,-29.75,0,1300);
+  box(13.6,6,.2,M(0x0c121a),0,3.6,-29.9,false,false);
+}
+const world={};
+
+// ---------- client board ----------
+const client={tasks:24,done:15,stage:2,passed:11,testing:3,feedback:2,benchOK:false};
+const PIPE=['Classify','Analyze','Implement','Verify','Review','Draft PR'];
+function drawBoard(g,w,h){
+  g.fillStyle='#0b1119'; g.fillRect(0,0,w,h);
+  g.fillStyle='#ffd27a'; g.font='500 26px "IBM Plex Mono", monospace'; g.fillText('CLIENT BOARD \u00b7 EXAMPLE CLIENT \u00b7 SIMULATED',36,52);
+  g.fillStyle='#e9eef4'; g.font='600 64px "IBM Plex Sans", sans-serif'; g.fillText(client.done+' of '+client.tasks+' tasks done',36,140);
+  g.fillStyle='#1b2533'; roundRect(g,36,168,w-72,26,13); g.fill(); g.fillStyle='#7bd88f'; roundRect(g,36,168,Math.max(26,(w-72)*client.done/client.tasks),26,13); g.fill();
+  g.fillStyle='#9aabbe'; g.font='500 21px "IBM Plex Mono", monospace'; g.fillText('SOFTWARE FACTORY \u00b7 CURRENT RUN',36,250);
+  const sw=(w-72-5*12)/6;
+  PIPE.forEach((t,i)=>{ const x=36+i*(sw+12); const on=i===client.stage, past=i<client.stage;
+    g.fillStyle=on?'#ffd27a':(past?'#26402f':'#151e2a'); roundRect(g,x,270,sw,74,12); g.fill();
+    g.fillStyle=on?'#2a1a04':(past?'#a7e3b4':'#7d8ea2'); g.font='600 24px "IBM Plex Sans", sans-serif'; g.fillText(t,x+14,316); });
+  g.fillStyle='#cfd9e4'; g.font='400 26px "IBM Plex Sans", sans-serif';
+  g.fillText('Test bench: '+client.testing+' modules testing \u00b7 '+client.passed+' passed \u00b7 '+client.feedback+' feedback notes',36,404);
+  g.fillStyle='#7d8ea2'; g.font='400 20px "IBM Plex Mono", monospace'; g.fillText('Visible to this client only. Merging code stays a separate approved step.',36,h-26);
+}
+function refreshBoard(){ const s=world.board; if(!s) return; drawBoard(s.userData.g,s.userData.cw,s.userData.ch); s.userData.t.needsUpdate=true; }
+const love={C:.6,D:.25,B:.8};
+function drawLove(c){
+  const g=c.getContext('2d'), W=c.width, H=c.height, pad=34; g.clearRect(0,0,W,H);
+  g.strokeStyle='rgba(150,180,210,.25)'; g.lineWidth=1; g.beginPath(); g.moveTo(pad,8); g.lineTo(pad,H-pad); g.lineTo(W-8,H-pad); g.stroke();
+  g.fillStyle='#9aabbe'; g.font='500 20px "IBM Plex Mono", monospace'; g.fillText('E',6,24); g.fillText('time',W-60,H-8);
+  const k=love.B*(love.C-love.D), Emax=4; const yE=E=>H-pad-(Math.min(E,Emax)/Emax)*(H-pad-12);
+  g.setLineDash([6,6]); g.strokeStyle='rgba(150,180,210,.4)'; g.beginPath(); g.moveTo(pad,yE(1)); g.lineTo(W-8,yE(1)); g.stroke(); g.setLineDash([]);
+  g.strokeStyle=k>0.001?'#7bd88f':(k<-0.001?'#ff6b5a':'#f3b562'); g.lineWidth=4; g.beginPath();
+  for(let i=0;i<=100;i++){ const t=i/100*4, x=pad+i/100*(W-pad-8), y=yE(Math.exp(k*t)); i?g.lineTo(x,y):g.moveTo(x,y); } g.stroke();
+  return k;
+}
+
+// ---------- control screen ----------
+const stats={tasks:1284,approved:0,declined:0,pallets:120,simRuns:36};
+function drawScreen(g,w,h){
+  g.fillStyle='#0b1119'; g.fillRect(0,0,w,h);
+  g.fillStyle='#4fd3c4'; g.font='500 26px "IBM Plex Mono", monospace'; g.fillText('FLOWLINE HQ · LIVE WALL · SIMULATED',40,56);
+  g.fillStyle='#9aabbe'; g.textAlign='right'; g.fillText(new Date().toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),w-40,56); g.textAlign='left';
+  const waiting=pending?1:0;
+  const tiles=[['Agents online','8','#4fd3c4'],['People in','1','#f3b562'],['Tasks done today',stats.tasks.toLocaleString('en-IE'),'#e9eef4'],['Approvals waiting',String(waiting),waiting?'#f3b562':'#e9eef4'],['Decisions approved',String(stats.approved),'#7bd88f'],['Pallets reused (pilot)',String(stats.pallets),'#7bd88f']];
+  const tw=(w-80-5*18)/6;
+  tiles.forEach((t,i)=>{ const x=40+i*(tw+18), y=86; g.fillStyle='#131c27'; roundRect(g,x,y,tw,150,16); g.fill();
+    g.fillStyle='#9aabbe'; g.font='500 19px "IBM Plex Mono", monospace'; g.fillText(t[0].toUpperCase(),x+18,y+38);
+    g.fillStyle=t[2]; g.font='600 58px "IBM Plex Sans", sans-serif'; g.fillText(t[1],x+18,y+112); });
+  g.fillStyle='#9aabbe'; g.font='500 22px "IBM Plex Mono", monospace'; g.fillText('ROADMAP',40,300);
+  const lv=['1 · 3D model on Google Maps','2 · Browser walk-through','3 · Browser office, all day','4 · VR headquarters'];
+  const lw=(w-80-3*18)/4;
+  lv.forEach((t,i)=>{ const x=40+i*(lw+18), y=320; const on=i===1;
+    g.fillStyle=on?'#4fd3c4':'#131c27'; roundRect(g,x,y,lw,96,14); g.fill();
+    g.fillStyle=on?'#062421':'#cfd9e4'; g.font='600 26px "IBM Plex Sans", sans-serif'; g.fillText(t,x+20,y+44);
+    g.font='400 20px "IBM Plex Mono", monospace'; g.fillStyle=on?'#0b3a35':'#7d8ea2'; g.fillText(on?'You are here':(i===0?'Next: serviced address':'Later'),x+20,y+76); });
+  g.fillStyle='#7d8ea2'; g.font='400 20px "IBM Plex Mono", monospace'; g.fillText('Every action is logged against an agent identity. Risky actions wait for a human.',40,h-30);
+}
+function refreshScreen(){ const s=world.screen; if(!s) return; drawScreen(s.userData.g,s.userData.cw,s.userData.ch); s.userData.t.needsUpdate=true; }
+
+// ---------- figures ----------
+const figures=[]; const clickables=[];
+function makeFigure(a){
+  const grp=new THREE.Group(); const isA=a.kind==='agent';
+  const bodyMat=isA? new THREE.MeshStandardMaterial({color:0x2fa699,emissive:0x0d4a44,roughness:.35,metalness:.2}) : M(0xd99a4a,{roughness:.6});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.27,.33,1.05,18),bodyMat); body.position.y=.78; body.castShadow=true; grp.add(body);
+  const sh=new THREE.Mesh(new THREE.SphereGeometry(.27,18,12),bodyMat); sh.position.y=1.3; sh.scale.y=.55; grp.add(sh);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.21,20,16), isA? new THREE.MeshStandardMaterial({color:0xbff5ee,emissive:0x2c8f86,roughness:.2}) : M(0xe6c3a0,{roughness:.7}));
+  head.position.y=1.62; head.castShadow=true; grp.add(head);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(.26,.07,.06),new THREE.MeshBasicMaterial({color:isA?0x062421:0x3a2a1a})); visor.position.set(0,1.64,.19); grp.add(visor);
+  if(isA){ const halo=new THREE.Mesh(new THREE.TorusGeometry(.24,.025,8,32),new THREE.MeshBasicMaterial({color:0x7ff0e3})); halo.rotation.x=Math.PI/2; halo.position.y=1.98; grp.add(halo); a.halo=halo; }
+  const t=tag({title:a.name,sub:a.role,dot:'#4fd3c4',size:46},.36); t.position.y=2.45; grp.add(t); a.tagSprite=t;
+  [body,sh,head].forEach(m=>{m.userData.agent=a.id; clickables.push(m);});
+  grp.position.set(a.home[0],.24,a.home[1]); grp.rotation.y=a.home[2];
+  scene.add(grp); a.grp=grp; a.mode='home'; a.target=null; a.timer=3+rnd()*8; a.taskIdx=0;
+  setStatus(a, a.kind==='human'?'In the office':(rnd()>.3?'Working':'In simulation'));
+  figures.push(a);
+}
+function setStatus(a,s){ a.status=s; retag(a.tagSprite,{title:a.name,sub:a.role+' · '+s,dot:STATUS[s].c,size:46}); if(cardOpen===a.id) renderCard(a); }
+let syncT=0;
+
+// ---------- input ----------
+const keys={}; let joy=null, look=null;
+addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT') return; keys[e.code]=true; if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); if(e.code==='Escape'&&cardOpen){cardOpen=null; showZone(currentZone,true);} });
+addEventListener('keyup',e=>{ keys[e.code]=false; });
+const joyEl=document.getElementById('joy');
+canvas.addEventListener('pointerdown',e=>{
+  try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+  if(e.pointerType==='touch' && e.clientX<innerWidth*.45 && !joy){ joy={id:e.pointerId,x0:e.clientX,y0:e.clientY,dx:0,dy:0}; joyEl.style.left=e.clientX+'px'; joyEl.style.top=e.clientY+'px'; joyEl.hidden=false; }
+  else if(!look){ look={id:e.pointerId,x:e.clientX,y:e.clientY,moved:0,sx:e.clientX,sy:e.clientY}; }
+});
+canvas.addEventListener('pointermove',e=>{
+  if(joy&&e.pointerId===joy.id){ let dx=e.clientX-joy.x0, dy=e.clientY-joy.y0; const l=Math.hypot(dx,dy); if(l>50){dx*=50/l;dy*=50/l;} joy.dx=dx/50; joy.dy=dy/50; joyEl.firstElementChild.style.transform='translate('+dx+'px,'+dy+'px)'; }
+  else if(look&&e.pointerId===look.id){ const dx=e.clientX-look.x, dy=e.clientY-look.y; look.x=e.clientX; look.y=e.clientY; look.moved+=Math.abs(dx)+Math.abs(dy);
+    const k=e.pointerType==='touch'?.006:.0042; yaw-=dx*k; pitch=Math.max(-1.2,Math.min(1.2,pitch-dy*k*.85)); }
+});
+function endPointer(e){
+  if(joy&&e.pointerId===joy.id){ joy=null; joyEl.hidden=true; joyEl.firstElementChild.style.transform=''; }
+  if(look&&e.pointerId===look.id){ if(look.moved<7) pick(e.clientX,e.clientY); look=null; }
+}
+canvas.addEventListener('pointerup',endPointer); canvas.addEventListener('pointercancel',endPointer);
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+function pick(x,y){ ndc.set(x/innerWidth*2-1,-(y/innerHeight)*2+1); ray.setFromCamera(ndc,camera); const hit=ray.intersectObjects(clickables,false)[0]; if(hit&&hit.distance<40){ openCard(hit.object.userData.agent); } }
+
+function blocked(x,z){ const r=.42; if(Math.abs(x)>110||z>110||z<-110) return true; for(const s of solids){ if(x>s.x0-r&&x<s.x1+r&&z>s.z0-r&&z<s.z1+r) return true; } return false; }
+function tryMove(dx,dz){ const p=rig.position; if(!blocked(p.x+dx,p.z+dz)){p.x+=dx;p.z+=dz;return;} if(!blocked(p.x+dx,p.z)) p.x+=dx; else if(!blocked(p.x,p.z+dz)) p.z+=dz; }
+
+// ---------- tour ----------
+let tour=null;
+function yawPitchTo(px,pz,lx,ly,lz){ const dx=lx-px, dz=lz-pz, dy=ly-1.65; return [Math.atan2(-dx,-dz), Math.atan2(dy,Math.hypot(dx,dz))]; }
+function goStop(i){
+  i=Math.max(0,Math.min(TOUR.length-1,i)); const s=TOUR[i]; const [ty,tp]=yawPitchTo(s.pos[0],s.pos[1],...s.look);
+  let dy=ty-yaw; dy=Math.atan2(Math.sin(dy),Math.cos(dy));
+  tour={i,t:0,from:{x:rig.position.x,z:rig.position.z,yaw,pitch},to:{x:s.pos[0],z:s.pos[1],yaw:yaw+dy,pitch:tp}};
+  cardOpen=null; showZone(ZONES.find(z=>z.id===s.zone),true);
+}
+function startTour(){ hideIntro(); goStop(0); }
+function endTour(){ tour=null; showZone(currentZone,true); }
+
+// ---------- panel ----------
+const panel=document.getElementById('panel');
+let currentZone=null, cardOpen=null;
+const sim={pallets:800,newCost:15,reuseCost:5,tests:[false,false,false,false]};
+function agentBtns(ids){ return '<div class="agentlist">'+ids.map(id=>{const a=AGENTS.find(x=>x.id===id); return '<button data-agent="'+id+'"><span class="dot" style="background:'+(a.kind==='agent'?'var(--agent)':'var(--human)')+'"></span>'+a.name+' · '+a.role+'</button>';}).join('')+'</div>'; }
+function zoneHTML(z){
+  if(!z) return '<span class="eyebrow">Flowline HQ</span><h2>Walk into any lit circle</h2><p>Each circle on the floor is a room. Its story opens here when you step inside.</p>';
+  const E='<span class="eyebrow">'+z.name+'</span>';
+  switch(z.id){
+    case 'plaza': return E+'<h2>A real address. A building that only exists here.</h2><p class="lead">This is the view the public gets.</p><ul><li>The HQ has a registered seat and shows on Google Maps as this 3D building.</li><li>Inside is the team-only workspace where people and FLOW OS agents work together.</li><li>Walk through the front doors to go in.</li></ul><p class="note">Open question: Google listings need a staffed address. The launch plan is a serviced address first, then the map listing.</p>';
+    case 'reception': return E+'<h2>Every visitor is expected</h2><p>Ava, the reception agent, greets visitors and routes them. A customer meets a Flowline person here, together with the agents that will run their account.</p>'+agentBtns(['ava']);
+    case 'floor': return E+'<h2>Every running workflow is a workstation</h2><p>People and agents share one floor. Walk up to any desk, or click a figure to see its brain, soul, goal, values and niche.</p><div class="legend"><span><span class="dot" style="background:var(--agent)"></span>Agent</span><span><span class="dot" style="background:var(--human)"></span>Person</span><span><span class="dot" style="background:#a99cff"></span>In simulation</span><span><span class="dot" style="background:#f3b562"></span>Waiting for approval</span></div>'+agentBtns(['rio','iris','rex','tess','lynn'])+'<p>The empty desk is ready for the next hire. A new person or agent gets a desk instantly, with no lease.</p>';
+    case 'harness': return E+'<h2>Secure because they are whole</h2><p class="lead">Every agent works through FLOW OS. None touches company work directly.</p><ol><li>Least access: only the tools its role needs.</li><li>Every action logged against its identity, and replayable.</li><li>Money, deletions and outbound messages wait for a human.</li><li>Tested in simulation before it touches live work.</li><li>The model underneath can change. Who the agent is stays in FLOW OS.</li><li>Any agent can be paused or rolled back. That is care, not punishment.</li></ol><p>Purpose closes the gap where misconduct starts. The harness closes it in code, and never depends on an agent wanting to behave.</p>'+agentBtns(['ward']);
+    case 'network': {
+      const r=calc();
+      return E+'<h2>One pallet loop, three businesses</h2><p>Mo matches a manufacturer’s surplus pallets to a distributor that buys them, through a local repair workshop. Move the numbers to see who saves what.</p>'+
+      '<div class="sliders"><label for="sP">Reusable pallets per year<output id="oP">'+sim.pallets+'</output><input id="sP" type="range" min="100" max="3000" step="50" value="'+sim.pallets+'"></label>'+
+      '<label for="sN">New pallet cost<output id="oN">€'+sim.newCost+'</output><input id="sN" type="range" min="8" max="25" step="1" value="'+sim.newCost+'"></label>'+
+      '<label for="sR">Reuse, inspection and delivery per pallet<output id="oR">€'+sim.reuseCost+'</output><input id="sR" type="range" min="2" max="12" step="1" value="'+sim.reuseCost+'"></label></div>'+
+      '<div class="results"><div class="res"><span>Distributor saves</span><b id="rD">'+eur(r.d)+'</b></div><div class="res"><span>Manufacturer saves</span><b id="rM">'+eur(r.m)+'</b></div><div class="res"><span>Gross per year</span><b id="rG">'+eur(r.g)+'</b></div><div class="res net"><span>Net after €2,400 running</span><b id="rN">'+eur(r.n)+'</b></div></div>'+
+      '<p><b>Proof tests</b> <span id="tCount" style="color:var(--muted)">'+sim.tests.filter(Boolean).length+'/4 passed</span></p><ul class="tests">'+
+      ['Technical: one exchange validated as safe and compliant','Economic: invoices show a real net benefit','Network: finds matches better than introductions','Replication: two more opportunities ready'].map((t,i)=>'<li><label><input type="checkbox" data-test="'+i+'"'+(sim.tests[i]?' checked':'')+'>'+t+'</label></li>').join('')+'</ul>'+agentBtns(['mo'])+'<p class="sim">Illustrative assumptions: €2 avoided handling per pallet for the manufacturer. Not measured Monaghan results.</p>';
+    }
+    case 'lab': return E+'<h2>Understand once, run without AI</h2><p class="lead">AI does the discovery. Plain software does the repeat work, on a CPU.</p><ol class="steps">'+STEPS.map((s,i)=>'<li data-step="'+i+'"><b>'+(i+1)+'</b><span>'+s+'</span></li>').join('')+'</ol><p>The packs are the building blocks of this HQ. The Living Network demo is one. Agents use them as tools instead of reasoning from scratch.</p>';
+    case 'control': return E+'<h2>The whole company on one wall</h2><p>People and agents, live: tasks done, decisions waiting and what was approved. This is where approvals land when you are not on the floor.</p><p><b>Three doors, one set of commands.</b> Every HQ function works the same through the classic Flowline OS screen, through MCP for agents, and through this 3D world. The 3D world is optional. Nothing here needs it to get work done.</p><p><b>How it can grow.</b></p><ol><li>Flowline uses its own small HQ: people and agents together.</li><li>Client floors: boards, software factory, test bench, feedback, learning rooms.</li><li>A network of virtual companies, with clients bringing their own agents.</li><li>Own compute: hardware pools, GPUs, later own servers.</li><li>Sharing spare capacity and rewarding contributions.</li></ol>'+agentBtns(['tristan']);
+    case 'client': return E+'<h2>Clients watch their work get done</h2><p class="lead">Each client gets its own floor, or later its own building. Clients can come in person or send their own agents.</p><ul><li>The board shows how many tasks exist, how many are done and how the work moves.</li><li>The software factory shows each run: classify, analyze, implement, verify, review, draft pull request.</li><li>At the test bench, clients see what is tested, what is built and what really works.</li></ul><label for="fbText" style="display:block;font-size:12.5px;color:var(--muted);margin:6px 0 4px">Leave feedback at the test bench</label><textarea id="fbText" rows="2" style="width:100%;box-sizing:border-box;font:13px var(--font-body);color:var(--fg);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:8px">The export button should also offer CSV.</textarea><div class="navrow"><button id="fbSend" class="amber">Pin feedback</button><button id="syncBtn">Run a sync event</button></div><p class="sim">A sync event gives people and agents the same briefing at once, then checks it on a real task.</p>';
+    case 'commons': {
+      return E+'<h2>Help others, and the whole network gets stronger</h2><p>The Commons is shared by every company in the network. It rests on Brian Roemmele\u2019s Love Equation: cooperation (C) above defection (D) makes the system grow.</p>'+
+      '<canvas id="loveCv" width="680" height="300" style="width:100%;height:auto;display:block;margin:4px 0 8px" aria-label="Chart of E over time"></canvas><p id="loveOut" style="margin-bottom:6px"></p>'+
+      '<div class="sliders"><label for="lC">C \u00b7 cooperation<output id="oC">'+love.C+'</output><input id="lC" type="range" min="0" max="1" step=".05" value="'+love.C+'"></label><label for="lD">D \u00b7 defection<output id="oD">'+love.D+'</output><input id="lD" type="range" min="0" max="1" step=".05" value="'+love.D+'"></label><label for="lB">\u03b2 \u00b7 strength of feedback<output id="oB">'+love.B+'</output><input id="lB" type="range" min="0" max="1.5" step=".05" value="'+love.B+'"></label></div>'+
+      '<p><b>Proposed starting rules</b></p><ul><li>A shared template earns 2 credits once someone confirms it helped.</li><li>Each first reuse by another independent company adds 1, up to 5.</li><li>5 credits buy one extra test bench run, paid from a reserved budget.</li><li>Credits never raise access rights or jump the queue.</li><li>Spare inference and GPU time goes into the pool. Providers are paid only for work actually done.</li></ul><p class="note">Later stage: a token equalizer that balances AI usage across the network, with Bitcoin as one payment option. First pilot: four weeks, two partner companies, one controlled compute service.</p>';
+    }
+  }
+  return '';
+}
+function eur(v){ return (v<0?'−':'')+'€'+Math.abs(Math.round(v)).toLocaleString('en-IE'); }
+function calc(){ const d=sim.pallets*(sim.newCost-sim.reuseCost), m=sim.pallets*2, g=d+m; return {d,m,g,n:g-2400}; }
+function tourNav(){ if(!tour) return ''; const i=tour.i; return '<div class="navrow"><span class="count">STOP '+(i+1)+' OF '+TOUR.length+'</span>'+(i>0?'<button data-nav="prev">Back</button>':'')+(i<TOUR.length-1?'<button class="primary" data-nav="next">Next stop</button>':'<button class="primary" data-nav="end">Finish tour</button>')+'<button data-nav="exit">Exit</button></div>'; }
+function showZone(z,force){
+  if(!force && z===currentZone) return; currentZone=z; if(cardOpen) return;
+  panel.innerHTML=zoneHTML(z)+'<p class="sim">Concept prototype. Agents, activity and numbers are simulated.</p>'+tourNav();
+  wirePanel();
+}
+function wirePanel(root=panel){
+  root.querySelectorAll('[data-agent]').forEach(b=>b.onclick=()=>openCard(b.dataset.agent,root));
+  root.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{ const n=b.dataset.nav; if(n==='next') goStop(tour.i+1); else if(n==='prev') goStop(tour.i-1); else endTour(); });
+  const sP=root.querySelector('#sP');
+  if(sP){ const upd=()=>{ sim.pallets=+sP.value; sim.newCost=+root.querySelector('#sN').value; sim.reuseCost=+root.querySelector('#sR').value; const r=calc();
+      root.querySelector('#oP').textContent=sim.pallets; root.querySelector('#oN').textContent='€'+sim.newCost; root.querySelector('#oR').textContent='€'+sim.reuseCost;
+      root.querySelector('#rD').textContent=eur(r.d); root.querySelector('#rM').textContent=eur(r.m); root.querySelector('#rG').textContent=eur(r.g); root.querySelector('#rN').textContent=eur(r.n); };
+    ['#sP','#sN','#sR'].forEach(s=>root.querySelector(s).addEventListener('input',upd));
+    root.querySelectorAll('[data-test]').forEach(c=>c.onchange=()=>{ sim.tests[+c.dataset.test]=c.checked; const n=sim.tests.filter(Boolean).length; root.querySelector('#tCount').textContent=n+'/4 passed'+(n===4?' · ready to expand':''); });
+  }
+  const lC=root.querySelector('#lC');
+  if(lC){ const cv=root.querySelector('#loveCv'); const upd=()=>{ love.C=+lC.value; love.D=+root.querySelector('#lD').value; love.B=+root.querySelector('#lB').value;
+      root.querySelector('#oC').textContent=love.C.toFixed(2); root.querySelector('#oD').textContent=love.D.toFixed(2); root.querySelector('#oB').textContent=love.B.toFixed(2);
+      const k=drawLove(cv); root.querySelector('#loveOut').textContent=k>0.001?'C is above D, so the commons grows.':(k<-0.001?'D is above C, so the commons shrinks.':'C equals D, so the commons holds still.'); };
+    ['#lC','#lD','#lB'].forEach(x=>root.querySelector(x).addEventListener('input',upd)); upd(); }
+  const fb=root.querySelector('#fbSend');
+  if(fb){ fb.onclick=()=>{ const t=root.querySelector('#fbText').value.trim(); if(!t){ toast('<span class="who">Feedback</span><p>Write a note first, then pin it.</p>','info',2400); return; } client.feedback++; refreshBoard(); root.querySelector('#fbText').value=''; toast('<span class="who">Feedback pinned</span><p>Your note is on the test bench. The responsible agent picks it up next run.</p>','info'); };
+    root.querySelector('#syncBtn').onclick=()=>{ syncT=2.6; toast('<span class="who">Sync event</span><p>All 9 people and agents in the HQ received the same briefing. Next: a check on a real task.</p>','info'); }; }
+}
+
+function renderCard(a,root=panel){
+  const st=STATUS[a.status];
+  root.innerHTML='<span class="eyebrow">'+(a.kind==='agent'?'FLOW OS agent':'Person')+' · '+a.role+'</span><h2>'+a.name+'</h2><span class="status"><span class="dot" style="background:'+st.c+'"></span>'+a.status+'</span>'+
+   '<dl><dt>Brain</dt><dd>'+a.brain+'</dd><dt>Soul</dt><dd>'+a.soul+'</dd><dt>Goal</dt><dd>'+a.goal+'</dd><dt>Values</dt><dd>'+a.values+'</dd><dt>Niche</dt><dd>'+a.niche+'</dd><dt>Now</dt><dd>'+a.tasks[a.taskIdx%a.tasks.length]+'</dd></dl>'+
+   (a.kind==='agent'?'<p class="sim">Runs inside the FLOW OS harness. Identity, memory and values live in FLOW OS, not in the model.</p>':'')+
+   '<div class="navrow"><button id="cardBack">Back to the room</button></div>';
+  root.querySelector('#cardBack').onclick=()=>{ if(root===panel){ cardOpen=null; showZone(currentZone,true); } else showClassic(classicZone); };
+}
+function openCard(id,root=panel){ const a=AGENTS.find(x=>x.id===id); if(!a) return; if(root===panel){ cardOpen=id; renderCard(a); } else renderCard(a,root); }
+
+// ---------- classic view (no 3D) ----------
+const classicEl=document.getElementById('classic'), classicBody=document.getElementById('classicBody'), classicNav=document.getElementById('classicNav');
+let classicZone='reception';
+const CLASSIC_ORDER=['plaza','commons','reception','floor','client','harness','network','lab','control'];
+classicNav.innerHTML=CLASSIC_ORDER.map(id=>'<button data-cz="'+id+'">'+ZONES.find(z=>z.id===id).name+'</button>').join('')+'<button data-cz="agents">All agents</button>';
+classicNav.querySelectorAll('[data-cz]').forEach(b=>b.onclick=()=>showClassic(b.dataset.cz));
+function showClassic(id){ classicZone=id; classicNav.querySelectorAll('[data-cz]').forEach(b=>b.setAttribute('aria-current',b.dataset.cz===id?'true':'false'));
+  if(id==='agents'){ classicBody.innerHTML='<span class="eyebrow">Everyone in the HQ</span><h2>People and agents</h2><table class="ctable"><thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Niche</th></tr></thead><tbody>'+figures.map(a=>'<tr><td><button data-agent="'+a.id+'">'+a.name+'</button></td><td>'+a.role+'</td><td><span class="dot" style="background:'+STATUS[a.status].c+'"></span>'+a.status+'</td><td>'+a.niche+'</td></tr>').join('')+'</tbody></table>'; }
+  else classicBody.innerHTML=zoneHTML(ZONES.find(z=>z.id===id));
+  wirePanel(classicBody); }
+document.getElementById('btnClassic').onclick=()=>{ hideIntro(); classicEl.hidden=false; showClassic(classicZone); };
+document.getElementById('classicClose').onclick=()=>{ classicEl.hidden=true; };
+
+// ---------- approvals ----------
+const toasts=document.getElementById('toasts');
+let pending=null, nextApproval=14;
+function toast(html,cls='',ms=4200){ const d=document.createElement('div'); d.className='toast '+cls; d.innerHTML=html; toasts.appendChild(d); if(ms) setTimeout(()=>d.remove(),ms); return d; }
+function requestApproval(){
+  const p=rig.position; if(p.z>19.5||Math.abs(p.x)>29.5||p.z<-29.5) { nextApproval=8; return; }
+  const pool=figures.filter(a=>a.request&&a.mode==='home'); if(!pool.length){ nextApproval=8; return; }
+  const a=pool[Math.floor(rnd()*pool.length)]; pending=a; a.mode='toPlayer'; setStatus(a,'Waiting for approval');
+  document.getElementById('cApprovals').textContent='1';
+  const el=toast('<span class="who">'+a.name+' · '+a.role+' needs a decision</span><p>'+a.request+'</p><div class="btnrow"><button class="amber" data-d="yes">Approve</button><button data-d="no">Decline</button><button data-d="who">Who is this?</button></div>','',0);
+  el.querySelector('[data-d="who"]').onclick=()=>openCard(a.id);
+  el.querySelectorAll('[data-d="yes"],[data-d="no"]').forEach(b=>b.onclick=()=>{ const ok=b.dataset.d==='yes'; el.remove(); decide(a,ok); });
+  pending.toast=el;
+}
+function decide(a,ok){
+  if(ok){ stats.approved++; stats.tasks++; toast('<span class="who">Approved</span><p>Logged against '+a.name+'’s identity. '+a.name+' carries on.</p>','info'); }
+  else { stats.declined++; toast('<span class="who">Declined</span><p>Nothing was sent. '+a.name+' returns to its desk and records why.</p>','info'); }
+  a.mode='return'; setStatus(a,'Working'); pending=null; document.getElementById('cApprovals').textContent='0'; nextApproval=26+rnd()*14; refreshScreen();
+}
+
+// ---------- minimap ----------
+const mm=document.getElementById('minimap'), mg=mm.getContext('2d');
+const MM={x0:-45,x1:45,z0:-48,z1:52};
+function w2m(x,z){ return [(x-MM.x0)/(MM.x1-MM.x0)*mm.width,(z-MM.z0)/(MM.z1-MM.z0)*mm.height]; }
+function drawMinimap(){
+  const W=mm.width,H=mm.height; mg.clearRect(0,0,W,H);
+  mg.fillStyle='rgba(44,59,51,.9)'; mg.fillRect(0,0,W,H);
+  let [a,b]=w2m(-38,22),[c,d]=w2m(38,52); mg.fillStyle='#6f757d'; mg.fillRect(a,b,c-a,d-b);
+  [a,b]=w2m(-30,-30); [c,d]=w2m(30,20); mg.fillStyle='#c9ced5'; mg.fillRect(a,b,c-a,d-b); mg.strokeStyle='#1d2733'; mg.lineWidth=3; mg.strokeRect(a,b,c-a,d-b);
+  [a,b]=w2m(-8,-47); [c,d]=w2m(8,-37); mg.fillStyle='#1a2633'; mg.fillRect(a,b,c-a,d-b);
+  ZONES.forEach(z=>{ if(z.id==='plaza') return; const [x,y]=w2m(z.x,z.z); const r=z.r/(MM.x1-MM.x0)*W; mg.beginPath(); mg.arc(x,y,r,0,7); mg.fillStyle=z.col+'44'; mg.fill(); mg.strokeStyle=z.col; mg.lineWidth=2; mg.stroke(); });
+  figures.forEach(f=>{ const [x,y]=w2m(f.grp.position.x,f.grp.position.z); mg.beginPath(); mg.arc(x,y,5,0,7); mg.fillStyle=f.kind==='agent'?(f===pending?'#f3b562':'#4fd3c4'):'#f3b562'; mg.fill(); });
+  const [px,py]=w2m(rig.position.x,rig.position.z); mg.save(); mg.translate(px,py); mg.rotate(-yaw); mg.beginPath(); mg.moveTo(0,-13); mg.lineTo(8,9); mg.lineTo(0,4); mg.lineTo(-8,9); mg.closePath(); mg.fillStyle='#ffffff'; mg.fill(); mg.strokeStyle='#0e1520'; mg.lineWidth=2; mg.stroke(); mg.restore();
+}
+mm.addEventListener('click',e=>{ const r=mm.getBoundingClientRect(); const x=MM.x0+(e.clientX-r.left)/r.width*(MM.x1-MM.x0), z=MM.z0+(e.clientY-r.top)/r.height*(MM.z1-MM.z0);
+  if(!blocked(x,z)){ tour=null; hideIntro(); rig.position.x=x; rig.position.z=z; } else toast('<span class="who">Can’t stand there</span><p>Pick an open spot on the floor.</p>','info',2200); });
+
+// ---------- VR ----------
+const btnVR=document.getElementById('btnVR');
+let vrOK=false;
+if(navigator.xr&&navigator.xr.isSessionSupported){ navigator.xr.isSessionSupported('immersive-vr').then(s=>{vrOK=s; if(!s) btnVR.title='No VR headset found in this browser';}).catch(()=>{}); }
+btnVR.onclick=async()=>{
+  if(!vrOK){ toast('<span class="who">VR</span><p>No VR headset is available here. Open this page in a headset browser such as Meta Quest to walk the HQ in VR.</p>','info',5200); return; }
+  try{ const session=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor']}); renderer.xr.enabled=true; renderer.xr.setReferenceSpaceType('local-floor'); await renderer.xr.setSession(session); hideIntro();
+    session.addEventListener('end',()=>{ renderer.xr.enabled=false; camera.position.set(0,1.65,0); });
+  }catch(err){ toast('<span class="who">VR</span><p>The headset session could not start. Check that this page is allowed to use VR, then try again.</p>','info',5200); }
+};
+
+// ---------- buttons / intro ----------
+const intro=document.getElementById('intro');
+function hideIntro(){ intro.hidden=true; }
+document.getElementById('introTour').onclick=startTour;
+document.getElementById('btnTour').onclick=startTour;
+document.getElementById('introWalk').onclick=()=>{ hideIntro(); tour=null; showZone(currentZone,true); };
+document.getElementById('btnWalk').onclick=()=>{ hideIntro(); if(tour) endTour(); };
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+// ---------- loop ----------
+let boardAcc=0;
+const clock=new THREE.Clock(); let tAcc=0, screenAcc=0, mapAcc=0, stepT=0, step=0;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fwd=new THREE.Vector3();
+function update(dt,time){
+  // movement
+  let mx=0,mz=0; if(keys.KeyW||keys.ArrowUp) mz+=1; if(keys.KeyS||keys.ArrowDown) mz-=1; if(keys.KeyA||keys.ArrowLeft) mx-=1; if(keys.KeyD||keys.ArrowRight) mx+=1;
+  if(joy){ mx+=joy.dx; mz-=joy.dy; }
+  if(renderer.xr.isPresenting){ const s=renderer.xr.getSession(); if(s) for(const src of s.inputSources){ const gp=src.gamepad; if(gp&&gp.axes.length>=4){ mx+=gp.axes[2]; mz-=gp.axes[3]; } } }
+  const len=Math.hypot(mx,mz);
+  if(len>.08){ if(tour){ tour=null; showZone(currentZone,true);} hideIntro();
+    let ay=yaw; if(renderer.xr.isPresenting){ camera.getWorldDirection(fwd); ay=Math.atan2(-fwd.x,-fwd.z); }
+    const sp=(keys.ShiftLeft||keys.ShiftRight?8:4.2)*dt/Math.max(1,len);
+    const fx=-Math.sin(ay), fz=-Math.cos(ay), rx=Math.cos(ay), rz=-Math.sin(ay);
+    tryMove((fx*mz+rx*mx)*sp,(fz*mz+rz*mx)*sp);
+  }
+  if(tour&&tour.t<1){ tour.t=Math.min(1,tour.t+dt/(reduce?.01:2.2)); const e=tour.t<.5?2*tour.t*tour.t:1-Math.pow(-2*tour.t+2,2)/2;
+    rig.position.x=tour.from.x+(tour.to.x-tour.from.x)*e; rig.position.z=tour.from.z+(tour.to.z-tour.from.z)*e;
+    yaw=tour.from.yaw+(tour.to.yaw-tour.from.yaw)*e; pitch=tour.from.pitch+(tour.to.pitch-tour.from.pitch)*e; }
+  if(!renderer.xr.isPresenting){ rig.rotation.y=yaw; camera.rotation.x=pitch; }
+
+  // zone
+  if(!tour){ const p=rig.position; let best=null,bd=1e9; for(const z of ZONES){ const d=Math.hypot(p.x-z.x,p.z-z.z); if(d<z.r&&d<bd){bd=d;best=z;} } showZone(best,false); }
+
+  // figures
+  const pp=rig.position;
+  figures.forEach(a=>{
+    const g=a.grp; let tgt=null;
+    if(a.mode==='toPlayer'||a.mode==='wait'){ const f=-Math.sin(yaw), fz=-Math.cos(yaw); tgt=[pp.x+f*2,pp.z+fz*2]; }
+    else if(a.mode==='errand'||a.mode==='return') tgt=a.mode==='return'?[a.home[0],a.home[1]]:a.target;
+    if(tgt){ const dx=tgt[0]-g.position.x, dz=tgt[1]-g.position.z, d=Math.hypot(dx,dz);
+      if(d>.12){ const s=Math.min(d,(a.mode==='toPlayer'?3.4:2.3)*dt); g.position.x+=dx/d*s; g.position.z+=dz/d*s; g.rotation.y=Math.atan2(dx,dz); g.position.y=.24+Math.abs(Math.sin(time*9))*.05; }
+      else { g.position.y=.24;
+        if(a.mode==='toPlayer') a.mode='wait';
+        else if(a.mode==='errand'){ a.mode='return'; a.taskIdx++; }
+        else if(a.mode==='return'){ a.mode='home'; g.rotation.y=a.home[2]; setStatus(a,'Working'); }
+      }
+      if(a.mode==='wait'){ g.rotation.y=Math.atan2(pp.x-g.position.x,pp.z-g.position.z); }
+    } else { g.position.y=.24+Math.sin(time*1.6+a.home[0])*.012; }
+    if(a.halo){ a.halo.rotation.z+=dt*1.5; a.halo.material.color.set(a===pending?0xf3b562:(a.status==='In simulation'?0xc5bcff:0x7ff0e3)); }
+    if(a.kind==='agent'&&a.mode==='home'){ a.timer-=dt; if(a.timer<=0){ a.timer=7+rnd()*10;
+      const r=rnd();
+      if(r<.18&&['rio','iris','rex','tess','lynn'].includes(a.id)&&!figures.some(f=>f.mode==='errand')){ const dest=[[0,-21.6],[-15,-13],[12,-12],[0,8]][Math.floor(rnd()*4)]; a.mode='errand'; a.target=dest; setStatus(a,'On an errand'); }
+      else { const s=r<.55?'Working':(r<.85?'In simulation':'Idle'); if(s==='Working'){a.taskIdx++; stats.tasks++;} if(s==='In simulation') stats.simRuns++; setStatus(a,s); }
+    } }
+  });
+
+  // approvals
+  if(!pending){ nextApproval-=dt; if(nextApproval<=0 && intro.hidden) requestApproval(); }
+
+  // ambient
+  if(world.pin) world.pin.position.y=33+Math.sin(time*1.4)*.6, world.pin.rotation.y+=dt*.4;
+  if(world.core){ world.core.rotation.y+=dt*.6; world.core.rotation.x+=dt*.25; }
+  world.harnessCaps&&world.harnessCaps.forEach((c,i)=>{ const v=.55+.45*Math.sin(time*2+i); c.material.color.setRGB(.3+.2*v,.5+.25*v,.9+.1*v); });
+  const vis=Math.max(2,Math.min(30,Math.round(sim.pallets/100)));
+  world.pallets&&world.pallets.forEach((p,i)=>{ p.m.visible=i<vis; if(!p.m.visible) return; p.t+=dt*.12; if(p.t>1){p.t-=1; if(p.c===1&&i<vis) stats.pallets++;} p.m.position.copy(world.curves[p.c].getPointAt(p.t)); p.m.position.y+=.03; });
+  stepT+=dt; if(stepT>1.7){ stepT=0; step=(step+1)%STEPS.length; if(currentZone&&currentZone.id==='lab'&&!cardOpen) panel.querySelectorAll('.steps li').forEach((li,i)=>li.classList.toggle('on',i===step)); }
+  if(world.labPillars){ const k=Math.min(1,stepT/.6); const a=world.labPillars[(step+STEPS.length-1)%STEPS.length].top, b=world.labPillars[step].top;
+    world.orb.position.lerpVectors(a,b,step===0?1:k); world.orb.position.y+=Math.sin(k*Math.PI)*.8;
+    world.labPillars.forEach((p,i)=>{ p.mat.emissive.setHex(i===step?0x7b6cff:(i<step?0x3d3488:0x221c50)); });
+    world.pack.material.opacity=step===6?.95:.35; }
+  screenAcc+=dt; if(screenAcc>1){ screenAcc=0; refreshScreen(); refreshBoard(); }
+  boardAcc+=dt; if(boardAcc>3.2){ boardAcc=0; client.stage++; client.benchOK=!client.benchOK; if(client.benchOK){client.passed++;}
+    if(client.stage>=PIPE.length){ client.stage=0; client.done++; if(client.done>=client.tasks){ client.tasks+=6; } } }
+  if(world.benchLight){ world.benchLight.material.color.setHex(client.benchOK?0x7bd88f:0xf3b562); world.benchMods.forEach((m,i)=>m.position.y=1.22+(client.benchOK?0:Math.max(0,Math.sin(time*4+i))*.06)); }
+  if(world.poolLiquid){ const k=love.B*(love.C-love.D); const lvl=Math.max(.15,Math.min(2.2,1+k*.9)); world.poolLiquid.scale.y+=(lvl-world.poolLiquid.scale.y)*Math.min(1,dt*2); world.poolLiquid.position.y=.2+world.poolLiquid.scale.y*.3; }
+  world.rackLights&&world.rackLights.forEach((l,i)=>{ l.material.color.setHex(Math.sin(time*3+i*1.7)>.2?0x4fd3c4:0x1e5a54); });
+  if(syncT>0){ syncT-=dt; figures.forEach(a=>{ if(a.halo){ const s=1+Math.sin(syncT*8)*.5; a.halo.scale.set(s,s,s); a.halo.material.color.set(0xffffff);} }); if(syncT<=0) figures.forEach(a=>a.halo&&a.halo.scale.set(1,1,1)); }
+  mapAcc+=dt; if(mapAcc>.1){ mapAcc=0; drawMinimap(); }
+}
+function frame(){ const dt=Math.min(.05,clock.getDelta()); update(dt,clock.elapsedTime); renderer.render(scene,camera); }
+
+function boot(){
+  buildWorld(); AGENTS.forEach(makeFigure); refreshScreen(); refreshBoard();
+  const [y0,p0]=yawPitchTo(0,42,0,9,-20); yaw=y0; pitch=p0;
+  showZone(ZONES[0],true);
+  renderer.setAnimationLoop(frame);
+}
+Promise.race([document.fonts?document.fonts.ready:Promise.resolve(), new Promise(r=>setTimeout(r,1500))]).then(boot);
+})();
+</script>
