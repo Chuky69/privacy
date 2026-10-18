@@ -12,19 +12,19 @@ Built from the Flowline Operations Brand Book.
 - **Font:** Poppins, then Montserrat, then Arial. Most email apps don't load web fonts, so many readers will see Arial.
 - **Tagline:** "Designed to Flow. Built to Profit."
 - **Booking button** links to your Calendly. Delete it in the signature editor if you don't want it.
-- Icons are cyan circles with white symbols drawn in the email code, not image files, so there is nothing to host and nothing that can fail to load.
+- Icons are cyan circles with white symbols, as image files in `upload/` sized exactly for the signature.
 - Graphite text is dark enough that dark-mode apps, including the Gmail app, flip it to light automatically.
 - **Legal footer:** company name, CRO no. 822462, registered office, and VAT no. Irish Companies Act 2014, section 151, requires company details on business letters, and the corporate enforcement regulator advises including them on emails. Directors were left out at the owner's request.
 - **Confidentiality and GDPR note:** asks misdirected recipients to delete the email and gives an email address for data requests. Add a link to a privacy page once one is live on flowlineops.com.
 - To change anything, edit `build.py` and run `python3 build.py`.
 
-## Install (5 minutes, on a computer)
-1. Open `signature.html` in Chrome.
-2. Press Ctrl+A (Cmd+A on Mac), then Ctrl+C.
-3. In Gmail, go to Settings, See all settings, General, Signature.
-4. Delete the old signature completely, then paste.
-5. **Add the logo.** In the signature box, highlight the word LOGO. Click Insert image, choose My Drive, and pick `Flowline Operations Logo.png`. Set its size to Small. That file has a solid background, so it shows as a clean tile in dark mode.
-6. Save changes at the bottom of the page.
+## Install (on a computer)
+Gmail strips images that are hosted elsewhere, so the logo and icons are uploaded inside Gmail.
+1. Open `signature.html` in Chrome (or the Gmail draft with it), select from your name to the end of the grey text, and copy.
+2. In Gmail, go to Settings, See all settings, General, Signature. Delete the old signature and paste.
+3. Click the **LOGO** box, delete it, click the image icon, choose **Upload**, pick `upload/flowline-logo.png`, then click the image and choose **Original size**.
+4. Do the same for the small numbered circles: **1** = `icon-1-phone.png`, **2** = `icon-2-email.png`, **3** = `icon-3-web.png`, **4** = `icon-4-location.png`. Choose **Original size** for each.
+5. Click **Save Changes** at the bottom of the page.
 
 ## Test it
 Send yourself an email and open it in the Gmail app with dark mode on, and in Gmail on desktop.

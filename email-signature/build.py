@@ -1,7 +1,8 @@
 """Builds signature.html from the Flowline Operations Brand Book palette.
 Run: python3 build.py
-Logo and icons are PNGs in img/, served by jsDelivr pinned to a commit so the
-links never change (raw.githubusercontent.com images did not load in Gmail)."""
+Gmail's editor strips images hosted elsewhere, so the signature carries numbered
+placeholders. After pasting it into Gmail's signature settings, replace each one
+with the matching file from upload/ (Insert image > Upload > Original size)."""
 import sys, pathlib
 HERE = pathlib.Path(__file__).parent
 GRAPHITE, CYAN, LIME, CORAL = "#374151", "#06b6d4", "#84cc16", "#f97316"
@@ -24,11 +25,12 @@ PRIVACY = ("This email and any attachments are confidential and intended only fo
            "We process personal data in line with the GDPR. To ask about your data, email "
            f'<a href="mailto:tristan@flowlineops.com" style="color:{MUTED};text-decoration:underline;">tristan@flowlineops.com</a>.')
 
-IMG = "https://cdn.jsdelivr.net/gh/Chuky69/privacy@68647d3bb0feaa2fc5289ededa7b899c83e925ee/email-signature/img"
+
+NUM = {"phone": 1, "email": 2, "web": 3, "location": 4}
 
 def row(icon, content):
-    badge = (f'<img src="{IMG}/{icon}.png" width="20" height="20" alt="" '
-             f'style="display:block;width:20px;height:20px;border:0;outline:none;">')
+    badge = (f'<div style="width:18px;height:18px;line-height:18px;border:1px dashed {CYAN};border-radius:10px;'
+             f'text-align:center;font-size:10px;font-weight:bold;color:{CYAN};font-family:Arial,sans-serif;">{NUM[icon]}</div>')
     return (f'<tr><td width="30" valign="middle" style="padding:4px 10px 4px 0;">{badge}</td>'
             f'<td valign="middle" style="padding:4px 0;font-size:13px;line-height:18px;color:{GRAPHITE};">{content}</td></tr>')
 
@@ -54,7 +56,7 @@ SIG = f'''<table cellpadding="0" cellspacing="0" border="0" role="presentation" 
 <div style="font-size:18px;line-height:24px;font-weight:bold;color:{GRAPHITE};">Tristan Messer</div>
 <div style="font-size:13px;line-height:19px;font-weight:bold;color:{CYAN};">Managing Director</div>
 <div style="font-size:13px;line-height:19px;color:{GRAPHITE};padding-bottom:12px;">Flowline Operations</div>
-<img src="{IMG}/logo-full.png" width="120" height="88" alt="Flowline Operations" style="display:block;width:120px;height:88px;border:0;outline:none;border-radius:10px;">
+<div style="width:118px;height:86px;line-height:86px;border:1px dashed {CYAN};border-radius:10px;text-align:center;font-size:13px;font-weight:bold;color:{CYAN};font-family:Arial,sans-serif;">LOGO</div>
 </td>
 <td width="2" style="width:2px;background-color:{CYAN};font-size:0;line-height:0;">&nbsp;</td>
 <td valign="middle" style="padding:0 0 0 24px;">
