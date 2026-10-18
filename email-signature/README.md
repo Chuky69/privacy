@@ -12,7 +12,7 @@ Built from the Flowline Operations Brand Book.
 - **Font:** Poppins, then Montserrat, then Arial. Most email apps don't load web fonts, so many readers will see Arial.
 - **Tagline:** "Designed to Flow. Built to Profit."
 - **Booking button** links to your Calendly. Delete it in the signature editor if you don't want it.
-- Icons are solid cyan circles hosted in this repo, so they look the same on white and black. **Keep the `icons` folder.**
+- Icons are cyan circles with white symbols drawn in the email code, not image files, so there is nothing to host and nothing that can fail to load.
 - Graphite text is dark enough that dark-mode apps, including the Gmail app, flip it to light automatically.
 - **Legal footer:** company name, CRO no. 822462, registered office, and VAT no. Irish Companies Act 2014, section 151, requires company details on business letters, and the corporate enforcement regulator advises including them on emails. Directors were left out at the owner's request.
 - **Confidentiality and GDPR note:** asks misdirected recipients to delete the email and gives an email address for data requests. Add a link to a privacy page once one is live on flowlineops.com.
