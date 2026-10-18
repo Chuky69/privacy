@@ -7,10 +7,11 @@
 - **Links were forced to pure black** and the old block carried empty HubSpot rows and an extra divider line.
 
 ## What the new signature does
-- No icon images. Small blue letters (M, E, W, A) label each line, so nothing can vanish.
+- Same layout as before: name and logo on the left, blue divider, contact details with icons on the right.
+- Icons are solid blue circles with white symbols, hosted in this repo, so they look the same on white and black.
 - Text uses a soft near-black, never pure black. Dark-mode apps, including the Gmail app, flip it to white automatically.
-- Accent colour is a mid-blue that reads on both white and black backgrounds.
 - Arial throughout, no underlines, phone written in a readable format.
+- **Keep the `icons` folder in this repo.** The signature loads its icons from it.
 
 ## Install (5 minutes, on a computer)
 1. Open `signature.html` in Chrome.
