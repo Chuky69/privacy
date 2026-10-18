@@ -54,7 +54,7 @@ SIG = f'''<table cellpadding="0" cellspacing="0" border="0" role="presentation" 
 <div style="font-size:18px;line-height:24px;font-weight:bold;color:{GRAPHITE};">Tristan Messer</div>
 <div style="font-size:13px;line-height:19px;font-weight:bold;color:{CYAN};">Managing Director</div>
 <div style="font-size:13px;line-height:19px;color:{GRAPHITE};padding-bottom:12px;">Flowline Operations</div>
-<img src="{IMG}/logo-tile.png" width="120" height="56" alt="Flowline Operations" style="display:block;width:120px;height:56px;border:0;outline:none;border-radius:10px;">
+<img src="{IMG}/logo-full.png" width="120" height="88" alt="Flowline Operations" style="display:block;width:120px;height:88px;border:0;outline:none;border-radius:10px;">
 </td>
 <td width="2" style="width:2px;background-color:{CYAN};font-size:0;line-height:0;">&nbsp;</td>
 <td valign="middle" style="padding:0 0 0 24px;">
