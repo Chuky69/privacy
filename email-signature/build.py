@@ -24,7 +24,7 @@ PRIVACY = ("This email and any attachments are confidential and intended only fo
            "We process personal data in line with the GDPR. To ask about your data, email "
            f'<a href="mailto:tristan@flowlineops.com" style="color:{MUTED};text-decoration:underline;">tristan@flowlineops.com</a>.')
 
-IMG = "https://cdn.jsdelivr.net/gh/Chuky69/privacy@35328ba0b79cf10c957e5448950bdbd950b96487/email-signature/img"
+IMG = "https://cdn.jsdelivr.net/gh/Chuky69/privacy@68647d3bb0feaa2fc5289ededa7b899c83e925ee/email-signature/img"
 
 def row(icon, content):
     badge = (f'<img src="{IMG}/{icon}.png" width="20" height="20" alt="" '
