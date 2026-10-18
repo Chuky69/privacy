@@ -17,7 +17,7 @@
 2. Press Ctrl+A (Cmd+A on Mac), then Ctrl+C.
 3. In Gmail, go to Settings, See all settings, General, Signature.
 4. Delete the old signature completely, then paste.
-5. **Swap the logo for one with a solid background.** Click the logo, delete it, then use Insert image, My Drive, and pick `Flowline Operations Logo.png`. That file has a solid background baked in, so it shows as a clean tile in dark mode. Set its size to Small.
+5. **Add the logo.** In the signature box, highlight the word LOGO. Click Insert image, choose My Drive, and pick `Flowline Operations Logo.png`. Set its size to Small. That file has a solid background, so it shows as a clean tile in dark mode.
 6. Save changes at the bottom of the page.
 
 ## Test it
