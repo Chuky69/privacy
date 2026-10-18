@@ -9,17 +9,17 @@ GRAPHITE, CYAN, LIME, CORAL = "#374151", "#06b6d4", "#84cc16", "#f97316"
 MUTED = "#6B7280"
 FONT = "Poppins,Montserrat,Arial,Helvetica,sans-serif"
 
-# Companies Act 2014, s.151: company details and directors on business letters (ODCE says emails too).
+# Companies Act 2014, s.151(2): company details on business letters (ODCE says emails too).
+# Directors (s.151(1)) left out at the owner's request.
 COMPANY = {
     "name": "Flowline Operations Limited",
     "cro": "822462",
     "office": "11 Sruth an Mhuillinn, Emyvale, Co. Monaghan, H18 RW62, Ireland",
     "vat": "IE4820511MH",
-    "directors": "Tristan Messer (German), Mirko Salzer (German), Jonathan Martinez (American)",
 }
 LEGAL = (f"{COMPANY['name']} is a private company limited by shares, registered in Ireland, "
          f"CRO no. {COMPANY['cro']}. Registered office: {COMPANY['office']}. "
-         f"VAT no. {COMPANY['vat']}. Directors: {COMPANY['directors']}.")
+         f"VAT no. {COMPANY['vat']}.")
 PRIVACY = ("This email and any attachments are confidential and intended only for the named recipient. "
            "If you received it in error, please tell the sender and delete it. "
            "We process personal data in line with the GDPR. To ask about your data, email "
