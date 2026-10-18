@@ -10,7 +10,7 @@ FONT = "Poppins,Montserrat,Arial,Helvetica,sans-serif"
 
 def row(icon, content):
     return (f'<tr><td width="30" valign="middle" style="padding:4px 10px 4px 0;">'
-            f'<img src="{ICONS}/{icon}.png" width="20" height="20" alt="" style="display:block;width:20px;height:20px;border:0;"></td>'
+            f'<img src="{ICONS}/{icon}-cyan.png" width="20" height="20" alt="" style="display:block;width:20px;height:20px;border:0;"></td>'
             f'<td valign="middle" style="padding:4px 0;font-size:13px;line-height:18px;color:{GRAPHITE};">{content}</td></tr>')
 
 def link(href, text, color=GRAPHITE, bold=False):
