@@ -1,7 +1,7 @@
 """Builds signature.html from the Flowline Operations Brand Book palette.
 Run: python3 build.py
-Icons are drawn in HTML (coloured circle + symbol), not image files, because
-Gmail would not load hosted icon images."""
+Logo and icons are PNGs in img/, served by jsDelivr pinned to a commit so the
+links never change (raw.githubusercontent.com images did not load in Gmail)."""
 import sys, pathlib
 HERE = pathlib.Path(__file__).parent
 GRAPHITE, CYAN, LIME, CORAL = "#374151", "#06b6d4", "#84cc16", "#f97316"
@@ -24,18 +24,11 @@ PRIVACY = ("This email and any attachments are confidential and intended only fo
            "We process personal data in line with the GDPR. To ask about your data, email "
            f'<a href="mailto:tristan@flowlineops.com" style="color:{MUTED};text-decoration:underline;">tristan@flowlineops.com</a>.')
 
-# Phone uses U+260F (outline telephone), which has no emoji form, so Windows/phones can't
-# swap in the red emoji phone. Envelope gets the text-style selector (&#65038;) for the same reason.
-ICON = {"phone": "&#9743;", "email": "&#9993;&#65038;", "web": "&#8962;", "location": "&#9906;"}
-# Name the system symbol fonts first so each OS centres its own glyph, instead of
-# borrowing a glyph into Arial's line metrics (which pushed the phone off-centre on Windows).
-SYMBOL_FONT = "'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols 2','DejaVu Sans',Arial,sans-serif"
+IMG = "https://cdn.jsdelivr.net/gh/Chuky69/privacy@e5c985ce613b89b35279a5cf12d176df989e008f/email-signature/img"
 
 def row(icon, content):
-    badge = (f'<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;"><tr>'
-             f'<td width="20" height="20" align="center" valign="middle" bgcolor="{CYAN}" '
-             f'style="width:20px;height:20px;background-color:{CYAN};border-radius:10px;color:#ffffff;'
-             f'font-size:13px;line-height:20px;font-family:{SYMBOL_FONT};text-align:center;mso-line-height-rule:exactly;">{ICON[icon]}</td></tr></table>')
+    badge = (f'<img src="{IMG}/{icon}.png" width="20" height="20" alt="" '
+             f'style="display:block;width:20px;height:20px;border:0;outline:none;">')
     return (f'<tr><td width="30" valign="middle" style="padding:4px 10px 4px 0;">{badge}</td>'
             f'<td valign="middle" style="padding:4px 0;font-size:13px;line-height:18px;color:{GRAPHITE};">{content}</td></tr>')
 
@@ -61,7 +54,7 @@ SIG = f'''<table cellpadding="0" cellspacing="0" border="0" role="presentation" 
 <div style="font-size:18px;line-height:24px;font-weight:bold;color:{GRAPHITE};">Tristan Messer</div>
 <div style="font-size:13px;line-height:19px;font-weight:bold;color:{CYAN};">Managing Director</div>
 <div style="font-size:13px;line-height:19px;color:{GRAPHITE};padding-bottom:12px;">Flowline Operations</div>
-<div style="width:120px;height:72px;line-height:72px;text-align:center;border:1px dashed {CYAN};border-radius:10px;font-size:13px;font-weight:bold;color:{CYAN};">LOGO</div>
+<img src="{IMG}/logo-tile.png" width="120" height="56" alt="Flowline Operations" style="display:block;width:120px;height:56px;border:0;outline:none;border-radius:10px;">
 </td>
 <td width="2" style="width:2px;background-color:{CYAN};font-size:0;line-height:0;">&nbsp;</td>
 <td valign="middle" style="padding:0 0 0 24px;">
