@@ -7,11 +7,14 @@
 - **Links were forced to pure black** and the old block carried empty HubSpot rows and an extra divider line.
 
 ## What the new signature does
-- Same layout as before: name and logo on the left, blue divider, contact details with icons on the right.
-- Icons are solid blue circles with white symbols, hosted in this repo, so they look the same on white and black.
-- Text uses a soft near-black, never pure black. Dark-mode apps, including the Gmail app, flip it to white automatically.
-- Arial throughout, no underlines, phone written in a readable format.
-- **Keep the `icons` folder in this repo.** The signature loads its icons from it.
+Built from the Flowline Operations Brand Book.
+- **Colours:** Graphite `#374151` for text, Cyan Blue `#06b6d4` for title, icons, divider and website, Lime Green `#84cc16` in the accent bar, Warm Coral `#f97316` for the call-to-action button.
+- **Font:** Poppins, then Montserrat, then Arial. Most email apps don't load web fonts, so many readers will see Arial.
+- **Tagline:** "Designed to Flow. Built to Profit."
+- **Booking button** links to your Calendly. Delete it in the signature editor if you don't want it.
+- Icons are solid cyan circles hosted in this repo, so they look the same on white and black. **Keep the `icons` folder.**
+- Graphite text is dark enough that dark-mode apps, including the Gmail app, flip it to light automatically.
+- To change anything, edit `build.py` and run `python3 build.py`.
 
 ## Install (5 minutes, on a computer)
 1. Open `signature.html` in Chrome.
